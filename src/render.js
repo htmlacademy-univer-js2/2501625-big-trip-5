@@ -13,6 +13,9 @@ function createElement(template) {
 }
 
 function render(component, container, place = RenderPosition.BEFOREEND) {
+  if (!container || !component.getElement()) {
+    return;
+  }
   container.insertAdjacentElement(place, component.getElement());
 }
 
