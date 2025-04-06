@@ -1,8 +1,9 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 import { getUpperFirst, getTime } from '../utils.js';
-import { groupToPretext } from '../const.js';
+import { getPrepositionForType } from '../const.js';
 
 function createPointTemplate({ type, destination, dateFrom, dateTo, basePrice, offers, isFavorite }) {
+  const preposition = getPrepositionForType(type);
   return (
     `<li class="trip-events__item">
               <div class="event">
@@ -12,7 +13,7 @@ function createPointTemplate({ type, destination, dateFrom, dateTo, basePrice, o
                 <div class="event__type">
                   <img class="event__type-icon" width="42" height="42" src="img/icons/taxi.png" alt="Event type icon">
                 </div>
-                <h3 class="event__title">${getUpperFirst(type)} ${groupToPretext[type]} ${getUpperFirst(destination.name)}</h3>
+                <h3 class="event__title">${getUpperFirst(type)} ${preposition} ${getUpperFirst(destination.name)}</h3>
                 <div class="event__schedule">
                   <p class="event__time">
                     <time class="event__start-time" datetime="${dateFrom.toISOString()}">${getTime(dateFrom)}</time>
@@ -45,46 +46,28 @@ function createPointTemplate({ type, destination, dateFrom, dateTo, basePrice, o
   );
 }
 
-export default class PointView {
-  constructor(point) {
-    this.point = point;
-    this.element = null;
+export default class PointView extends AbstractView {
+  #point = null;
+  #onExpandClick = null;
+
+  constructor({ point, onExpandClick }) {
+    super();
+    this.#point = point;
+    this.#onExpandClick = onExpandClick;
+    this.#setHandlers();
   }
 
-
-  _onFavoriteClick(event) {
-    event.preventDefault();
-    this.point.isFavorite = !this.point.isFavorite;
-    this.updateFavoriteButton();
+  #setHandlers() {
+    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#onExpandClick);
+    this.element.querySelector('.event__favorite-btn').addEventListener('click', this.#onFavoriteClick);
   }
 
+  #onFavoriteClick = (evt) => {
+    evt.preventDefault();
+    // Обработка добавления в избранное
+  };
 
-  updateFavoriteButton() {
-    const favoriteButton = this.getElement().querySelector('.event__favorite-btn');
-    if (this.point.isFavorite) {
-      favoriteButton.classList.add('event__favorite-btn--active');
-    } else {
-      favoriteButton.classList.remove('event__favorite-btn--active');
-    }
-  }
-
-
-  setFavoriteClickHandler() {
-    this.getElement().querySelector('.event__favorite-btn').addEventListener('click', this._onFavoriteClick.bind(this));
-  }
-
-  getTemplate() {
-    return createPointTemplate(this.point);
-  }
-
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
-    }
-    return this.element;
-  }
-
-  removeElement() {
-    this.element = null;
+  get template() {
+    return createPointTemplate(this.#point);
   }
 }
