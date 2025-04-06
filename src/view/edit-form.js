@@ -1,7 +1,6 @@
-import { createElement } from '../render.js';
+import AbstractView from '../framework/view/abstract-view.js';
 
-function createEditRoutePointTemplate(routePoint) {
-  const { type, destination, dateFrom, dateTo, basePrice, offers } = routePoint;
+function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, basePrice, offers }) {
 
   return (
     `<li class="trip-events__item">
@@ -124,24 +123,48 @@ function createEditRoutePointTemplate(routePoint) {
   );
 }
 
-export default class EditRoutePointView {
-  constructor(routePoint) {
-    this.routePoint = routePoint;
+export default class EditRoutePointView extends AbstractView {
+  #point = null;
+  #onFormSubmit = null;
+  #onCollapseClick = null;
+
+  constructor({ point, onFormSubmit, onCollapseClick }) {
+    super();
+    this.#point = point;
+    this.#onFormSubmit = onFormSubmit;
+    this.#onCollapseClick = onCollapseClick;
+
+    // Привязываем обработчики к элементам, если они существуют.
+    this._setEventListeners();
   }
 
-  getTemplate() {
-    return createEditRoutePointTemplate(this.routePoint);
-  }
+  // Метод для привязки обработчиков событий
+  _setEventListeners() {
+    const formElement = this.element.querySelector('form');
+    const collapseButton = this.element.querySelector('.event__rollup-btn');
 
-  getElement() {
-    if (!this.element) {
-      this.element = createElement(this.getTemplate());
+    if (formElement) {
+      formElement.addEventListener('submit', this.#onFormSubmit);
     }
 
-    return this.element;
+    if (collapseButton) {
+      collapseButton.addEventListener('click', this.#onCollapseClick);
+    }
   }
 
-  removeElement() {
-    this.element = null;
+  // Геттер для #point
+  get point() {
+    return this.#point;
+  }
+
+  // Сеттер для #point
+  set point(updatedPoint) {
+    this.#point = updatedPoint;
+    // Перерисовываем шаблон после изменения данных
+    this.updateElement();
+  }
+
+  get template() {
+    return createEditRoutePointTemplate(this.#point);
   }
 }

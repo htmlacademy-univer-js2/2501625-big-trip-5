@@ -3,13 +3,21 @@ const CopyPlugin = require('copy-webpack-plugin');
 const HtmlPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  entry: './src/main.js', // Точка входа
+  entry: './src/main.js',
   output: {
-    filename: 'bundle.[contenthash].js', // Имя бандла
-    path: path.resolve(__dirname, 'build'), // Директория для файлов сборки
-    clean: true, // Удаляем предыдущую сборку перед созданием новой
+    filename: 'bundle.[contenthash].js',
+    path: path.resolve(__dirname, 'build'),
+    clean: true,
   },
-  devtool: 'source-map', // Генерируем карту исходного кода
+  devtool: 'source-map',
+  devServer: {
+    static: {
+      directory: path.resolve(__dirname, 'build'),
+    },
+    port: 8081,
+    open: true,
+    hot: true,
+  },
   plugins: [
     new HtmlPlugin({
       template: 'public/index.html',
@@ -26,7 +34,7 @@ module.exports = {
     }),
   ],
   module: {
-    rules: [ // Добавляем лоадеры
+    rules: [
       {
         test: /\.js$/,
         exclude: /(node_modules)/,
@@ -36,6 +44,10 @@ module.exports = {
             presets: ['@babel/preset-env']
           },
         },
+      },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader']
       },
     ],
   },
