@@ -23,3 +23,23 @@ export const getRandomDate = (daysOffset = 30) => {
   date.setDate(date.getDate() + Math.floor(Math.random() * daysOffset));
   return date;
 };
+
+
+import dayjs from 'dayjs';
+
+const isFuturePoint = (point) => dayjs().isBefore(point.dateFrom, 'minute');
+
+const isExpiredPoint = (point) => dayjs(point.dateTo).isValid() && dayjs().isAfter(dayjs(point.dateTo), 'minute');
+
+const isActualPoint = (point) => {
+  const now = dayjs();
+  const dateFrom = dayjs(point.dateFrom);
+  const dateTo = dayjs(point.dateTo);
+
+  return dateTo.isValid() &&
+         (now.isSame(dateFrom, 'minute') ||
+          now.isAfter(dateFrom, 'minute')) &&
+         now.isBefore(dateTo, 'minute');
+};
+
+export { isFuturePoint, isExpiredPoint, isActualPoint };

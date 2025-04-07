@@ -11,7 +11,7 @@ function createPointTemplate({ type, destination, dateFrom, dateTo, basePrice, o
                   ${dateFrom.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </time>
                 <div class="event__type">
-                  <img class="event__type-icon" width="42" height="42" src="img/icons/taxi.png" alt="Event type icon">
+                  <img class="event__type-icon" width="42" height="42" src="img/icons/${type}.png" alt="Event type icon">
                 </div>
                 <h3 class="event__title">${getUpperFirst(type)} ${preposition} ${getUpperFirst(destination.name)}</h3>
                 <div class="event__schedule">
@@ -48,23 +48,24 @@ function createPointTemplate({ type, destination, dateFrom, dateTo, basePrice, o
 
 export default class PointView extends AbstractView {
   #point = null;
-  #onExpandClick = null;
+  #handleEditClick = null; // Changed property name
 
-  constructor({ point, onExpandClick }) {
+  constructor({ point, onEditClick }) { // Expecting onEditClick
     super();
     this.#point = point;
-    this.#onExpandClick = onExpandClick;
+    this.#handleEditClick = onEditClick; // Assign to correct property
     this.#setHandlers();
   }
 
   #setHandlers() {
-    this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#onExpandClick);
-    this.element.querySelector('.event__favorite-btn').addEventListener('click', this.#onFavoriteClick);
+    this.element
+      .querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#openEditButtonClickHandler);
   }
 
-  #onFavoriteClick = (evt) => {
+  #openEditButtonClickHandler = (evt) => {
     evt.preventDefault();
-    // Обработка добавления в избранное
+    this.#handleEditClick(); // Use the correct property name
   };
 
   get template() {

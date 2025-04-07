@@ -65,4 +65,24 @@ export const getPrepositionForType = (type) => {
   return movementTypes.includes(type) ? groupToPretext.action : groupToPretext.place;
 };
 
+export const MessageBoard = {
+  EMPTY_LIST: 'Click New Event to create your first point'
+};
 
+import { isActualPoint, isExpiredPoint, isFuturePoint } from './utils';
+
+const FiltersPoint = {
+  EVERYTHING: 'everything',
+  FUTURE: 'future',
+  PRESENT: 'present',
+  PAST: 'past'
+};
+
+const filter = {
+  [FiltersPoint.EVERYTHING]: (points) => points,
+  [FiltersPoint.FUTURE]: (points) => points.filter((point) => isFuturePoint(point)),
+  [FiltersPoint.PRESENT]: (points) => points.filter((point) => isActualPoint(point)),
+  [FiltersPoint.PAST]: (points) => points.filter((point) => isExpiredPoint(point))
+};
+
+export { FiltersPoint, filter };
