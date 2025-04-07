@@ -125,44 +125,43 @@ function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, bas
 
 export default class EditRoutePointView extends AbstractView {
   #point = null;
-  #onFormSubmit = null;
-  #onCollapseClick = null;
+  #handleFormSubmit = null;
+  #handleCloseClick = null;
 
-  constructor({ point, onFormSubmit, onCollapseClick }) {
+  constructor({ point, onFormSubmit, onCloseClick }) {
     super();
     this.#point = point;
-    this.#onFormSubmit = onFormSubmit;
-    this.#onCollapseClick = onCollapseClick;
+    this.#handleFormSubmit = onFormSubmit;
+    this.#handleCloseClick = onCloseClick;
 
-    // Привязываем обработчики к элементам, если они существуют.
-    this._setEventListeners();
+    // Bind handlers to maintain correct 'this' context
+    this.#formSubmitHandler = this.#formSubmitHandler.bind(this);
+    this.#closeClickHandler = this.#closeClickHandler.bind(this);
+
+    this.#setEventListeners();
   }
 
-  // Метод для привязки обработчиков событий
-  _setEventListeners() {
-    const formElement = this.element.querySelector('form');
-    const collapseButton = this.element.querySelector('.event__rollup-btn');
+  #setEventListeners() {
+    // Rollup button (close form)
+    this.element
+      .querySelector('.event__rollup-btn')
+      ?.addEventListener('click', this.#closeClickHandler);
 
-    if (formElement) {
-      formElement.addEventListener('submit', this.#onFormSubmit);
-    }
-
-    if (collapseButton) {
-      collapseButton.addEventListener('click', this.#onCollapseClick);
-    }
+    // Form submit
+    this.element
+      .querySelector('form')
+      ?.addEventListener('submit', this.#formSubmitHandler);
   }
 
-  // Геттер для #point
-  get point() {
-    return this.#point;
-  }
+  #formSubmitHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleFormSubmit();
+  };
 
-  // Сеттер для #point
-  set point(updatedPoint) {
-    this.#point = updatedPoint;
-    // Перерисовываем шаблон после изменения данных
-    this.updateElement();
-  }
+  #closeClickHandler = (evt) => {
+    evt.preventDefault();
+    this.#handleCloseClick();
+  };
 
   get template() {
     return createEditRoutePointTemplate(this.#point);
