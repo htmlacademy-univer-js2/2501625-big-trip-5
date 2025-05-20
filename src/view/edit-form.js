@@ -1,7 +1,13 @@
 // import AbstractView from '../framework/view/abstract-view.js';
+import dayjs from 'dayjs';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 
 function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, basePrice, offers }) {
+  const formattedDateFrom = dayjs(dateFrom).format('DD/MM/YY HH:mm');
+  const formattedDateTo = dayjs(dateTo).format('DD/MM/YY HH:mm');
 
   return (
     `<li class="trip-events__item">
@@ -78,10 +84,10 @@ function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, bas
 
           <div class="event__field-group event__field-group--time">
             <label class="visually-hidden" for="event-start-time-1">From</label>
-            <input class="event__input event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${dateFrom}">
+            <input class="event__input event__input--time" id="event-start-time-1" type="text" name="event-start-time" value="${formattedDateFrom}">
             &mdash;
             <label class="visually-hidden" for="event-end-time-1">To</label>
-            <input class="event__input event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${dateTo}">
+            <input class="event__input event__input--time" id="event-end-time-1" type="text" name="event-end-time" value="${formattedDateTo}">
           </div>
 
           <div class="event__field-group event__field-group--price">
@@ -127,6 +133,8 @@ function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, bas
 export default class EditRoutePointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleCloseClick = null;
+  #flatpickrStart = null;
+  #flatpickrEnd = null;
 
   constructor({ point, onFormSubmit, onCloseClick }) {
     super();
@@ -139,14 +147,74 @@ export default class EditRoutePointView extends AbstractStatefulView {
     return createEditRoutePointTemplate(this._state);
   }
 
+  _initFlatpickr() {
+    if (this.#flatpickrStart) {
+      this.#flatpickrStart.destroy();
+      this.#flatpickrStart = null;
+    }
+    if (this.#flatpickrEnd) {
+      this.#flatpickrEnd.destroy();
+      this.#flatpickrEnd = null;
+    }
+
+    const startInput = this.element.querySelector('#event-start-time-1');
+    const endInput = this.element.querySelector('#event-end-time-1');
+
+    this.#flatpickrStart = flatpickr(startInput, {
+      enableTime: true,
+      dateFormat: 'd/m/y H:i',
+      defaultDate: this._state.dateFrom,
+      onChange: this.#startDateChangeHandler,
+    });
+
+    this.#flatpickrEnd = flatpickr(endInput, {
+      enableTime: true,
+      dateFormat: 'd/m/y H:i',
+      defaultDate: this._state.dateTo,
+      minDate: this._state.dateFrom, // дата окончания не может быть меньше даты начала
+      onChange: this.#endDateChangeHandler,
+    });
+  }
+
+
   _restoreHandlers() {
     this.#setInnerHandlers();
+    this._initFlatpickr();
 
     const rollupBtn = this.element.querySelector('.event__rollup-btn');
     rollupBtn.addEventListener('click', this.#closeClickHandler);
 
     this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
   }
+
+  #startDateChangeHandler = ([selectedDate]) => {
+    const newDateFrom = dayjs(selectedDate).toISOString();
+    let newDateTo = this._state.dateTo;
+
+    // Если новая дата начала позже текущей даты окончания, поднимаем дату окончания
+    if (dayjs(newDateFrom).isAfter(dayjs(newDateTo))) {
+      newDateTo = newDateFrom;
+    }
+
+    this._setState({
+      dateFrom: newDateFrom,
+      dateTo: newDateTo,
+    });
+
+    // Обновим minDate у окончания
+    this.#flatpickrEnd.set('minDate', newDateFrom);
+  };
+
+  #endDateChangeHandler = ([selectedDate]) => {
+    const newDateTo = dayjs(selectedDate).toISOString();
+
+    if (dayjs(newDateTo).isBefore(dayjs(this._state.dateFrom))) {
+    // Игнорируем или принудительно ставим дату окончания не меньше даты начала
+      this._setState({ dateTo: this._state.dateFrom });
+    } else {
+      this._setState({ dateTo: newDateTo });
+    }
+  };
 
 
   #setInnerHandlers() {
