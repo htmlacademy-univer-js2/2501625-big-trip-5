@@ -36,6 +36,9 @@ export default class PointPresenter {
       onCloseClick: this.#handleCloseClick,
     });
 
+    this.#editPointComponent._restoreHandlers();
+
+
     if (prevPointComponent === null || prevEditPointComponent === null) {
       render(this.#pointComponent, this.#boardContainer);
       return;
@@ -70,11 +73,17 @@ export default class PointPresenter {
   }
 
   #handleEditClick = () => {
-    this.#changeMode(); // Сброс форм у других презентеров
-    this.#replacePointToForm();
+    if (this.#mode === 'DEFAULT') {
+      this.#changeMode(); // закрываем другие формы
+      this.#replacePointToForm(); // открываем текущую форму
+    } else {
+      this.#replaceFormToPoint(); // закрываем форму, показываем точку
+    }
   };
 
-  #handleFormSubmit = () => {
+
+  #handleFormSubmit = (updatedPoint) => {
+    this.#changeData(updatedPoint); // сообщаем родителю об изменении данных
     this.#replaceFormToPoint();
   };
 
