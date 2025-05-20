@@ -86,4 +86,17 @@ export default class PointPresenter {
     const updatedPoint = {...this.#point, isFavorite: !this.#point.isFavorite};
     this.#changeData(updatedPoint);
   };
+
+  destroy() {
+    if (this.#pointComponent) {
+      remove(this.#pointComponent);
+      this.#pointComponent = null;
+    }
+
+    if (this.#editPointComponent) {
+      remove(this.#editPointComponent);
+      this.#editPointComponent = null;
+    }
+  }
+
 }

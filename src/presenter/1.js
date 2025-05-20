@@ -18,6 +18,8 @@ export default class BoardPresenter {
   #pointsListComponent = null;
   #pointsData = null;
   #destinationsModel = null;
+  #currentSortType = 'sort-day'; // значение по умолчанию
+
 
   constructor({ pointsModel, offersModel, destinationsModel }) {
     this.#boardContainer = document.querySelector('.trip-events');
@@ -28,8 +30,45 @@ export default class BoardPresenter {
 
   init() {
     this.#pointsData = generatePoints(5);
+
     render(new FilterView(), this.#boardContainer);
     this.#renderBoard();
+  }
+
+  #handleSortTypeChange = (sortType) => {
+    if (this.#currentSortType === sortType) {
+      return;
+    }
+
+    this.#currentSortType = sortType;
+
+    this.#clearPoints();
+
+    const sortedPoints = this.#sortPoints(this.#pointsData);
+    sortedPoints.forEach((point) => this.#renderPoint(point));
+  };
+
+
+  #sortPoints(points) {
+    switch (this.#currentSortType) {
+      case 'sort-time':
+        return [...points].sort((a, b) => b.duration - a.duration); // предполагаем, что есть поле `duration`
+      case 'sort-price':
+        return [...points].sort((a, b) => b.basePrice - a.basePrice);
+      case 'sort-day':
+      default:
+        return [...points].sort((a, b) => new Date(a.dateFrom) - new Date(b.dateFrom));
+    }
+  }
+
+
+  #clearPoints() {
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+  }
+
+  #renderPoints() {
+    this.#pointsData.forEach((point) => this.#renderPoint(point));
   }
 
   #handleDataChange = (updatedPoint) => {
@@ -63,13 +102,18 @@ export default class BoardPresenter {
   }
 
   #renderBoard() {
-    render(new SortView(), this.#boardContainer);
+    const sortComponent = new SortView({
+      onSortTypeChange: this.#handleSortTypeChange,
+    });
+    render(sortComponent, this.#boardContainer);
 
-    this.#pointsListComponent = new ListElementView(); // <-- Обязательно!
+    this.#pointsListComponent = new ListElementView();
     render(this.#pointsListComponent, this.#boardContainer);
 
-    if (this.#pointsData.length > 0) {
-      this.#pointsData.forEach((point) => this.#renderPoint(point));
+    const sortedPoints = this.#sortPoints(this.#pointsData);
+
+    if (sortedPoints.length > 0) {
+      sortedPoints.forEach((point) => this.#renderPoint(point));
     } else {
       render(
         new ListMessageView({ message: MessageBoard.EMPTY_LIST }),
@@ -77,5 +121,6 @@ export default class BoardPresenter {
       );
     }
   }
+
 
 }
