@@ -1,6 +1,33 @@
 import AbstractView from '../framework/view/abstract-view.js';
 import { getUpperFirst, getTime } from '../utils.js';
 import { getPrepositionForType } from '../const.js';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration.js';
+
+dayjs.extend(duration);
+
+function formatDuration(start, end) {
+  const diffMs = dayjs(end).diff(dayjs(start)); // разница в миллисекундах
+  const dur = dayjs.duration(diffMs);
+
+  const days = dur.days();
+  const hours = dur.hours();
+  const minutes = dur.minutes();
+
+  const parts = [];
+  if (days > 0) {
+    parts.push(`${days}D`);
+  }
+  if (hours > 0) {
+    parts.push(`${hours}H`);
+  }
+  if (minutes > 0) {
+    parts.push(`${minutes}M`);
+  }
+
+  return parts.join(' ') || '0M';
+}
+
 
 function createPointTemplate({ type, destination, dateFrom, dateTo, basePrice, offers, isFavorite }) {
   const preposition = getPrepositionForType(type);
@@ -20,7 +47,8 @@ function createPointTemplate({ type, destination, dateFrom, dateTo, basePrice, o
                     &mdash;
                     <time class="event__end-time" datetime="${dateTo.toISOString()}">${getTime(dateTo)}</time>
                   </p>
-                  <p class="event__duration">30M</p>
+                  <p class="event__duration">${formatDuration(dateFrom, dateTo)}</p>
+
                 </div>
                 <p class="event__price">
                   &euro;&nbsp;<span class="event__price-value">${basePrice}</span>
