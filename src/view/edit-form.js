@@ -1,4 +1,5 @@
-import AbstractView from '../framework/view/abstract-view.js';
+// import AbstractView from '../framework/view/abstract-view.js';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 
 function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, basePrice, offers }) {
 
@@ -123,39 +124,41 @@ function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, bas
   );
 }
 
-export default class EditRoutePointView extends AbstractView {
-  #point = null;
+export default class EditRoutePointView extends AbstractStatefulView {
   #handleFormSubmit = null;
   #handleCloseClick = null;
 
   constructor({ point, onFormSubmit, onCloseClick }) {
     super();
-    this.#point = point;
+    this._state = EditRoutePointView.parsePointToState(point);
     this.#handleFormSubmit = onFormSubmit;
     this.#handleCloseClick = onCloseClick;
-
-    // Bind handlers to maintain correct 'this' context
-    this.#formSubmitHandler = this.#formSubmitHandler.bind(this);
-    this.#closeClickHandler = this.#closeClickHandler.bind(this);
-
-    this.#setEventListeners();
   }
 
-  #setEventListeners() {
-    // Rollup button (close form)
-    this.element
-      .querySelector('.event__rollup-btn')
-      ?.addEventListener('click', this.#closeClickHandler);
+  get template() {
+    return createEditRoutePointTemplate(this._state);
+  }
 
-    // Form submit
-    this.element
-      .querySelector('form')
-      ?.addEventListener('submit', this.#formSubmitHandler);
+  _restoreHandlers() {
+    this.#setInnerHandlers();
+
+    const rollupBtn = this.element.querySelector('.event__rollup-btn');
+    rollupBtn.addEventListener('click', this.#closeClickHandler);
+
+    this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
+  }
+
+
+  #setInnerHandlers() {
+    this.element.querySelectorAll('.event__type-input')
+      .forEach((input) => input.addEventListener('change', this.#typeChangeHandler));
+    this.element.querySelector('.event__input--destination')
+      .addEventListener('change', this.#destinationChangeHandler);
   }
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
-    this.#handleFormSubmit();
+    this.#handleFormSubmit(EditRoutePointView.parseStateToPoint(this._state));
   };
 
   #closeClickHandler = (evt) => {
@@ -163,7 +166,25 @@ export default class EditRoutePointView extends AbstractView {
     this.#handleCloseClick();
   };
 
-  get template() {
-    return createEditRoutePointTemplate(this.#point);
+
+  #typeChangeHandler = (evt) => {
+    this._setState({ type: evt.target.value });
+  };
+
+  #destinationChangeHandler = (evt) => {
+    this._setState({
+      destination: {
+        ...this._state.destination,
+        name: evt.target.value
+      }
+    });
+  };
+
+  static parsePointToState(point) {
+    return { ...point };
+  }
+
+  static parseStateToPoint(state) {
+    return { ...state };
   }
 }
