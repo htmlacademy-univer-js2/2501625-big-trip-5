@@ -1,13 +1,16 @@
-import Observable from '../framework/observable.js'; // подключи Observable
-import { generatePoints } from '../mock/point.js';
-import { POINT_COUNT } from '../const.js';
+import Observable from '../framework/observable.js';
+// import { generatePoints } from '../mock/point1.js';
+// import { POINT_COUNT } from '../const.js';
 
 export default class PointsModel extends Observable {
   #points = [];
+  #destinations = [];
+  #offers = [];
 
-  constructor() {
-    super(); // обязательно вызвать super() при наследовании
-    this.#points = generatePoints(POINT_COUNT);
+  init(points, destinations, offers) {
+    this.#points = points;
+    this.#destinations = destinations;
+    this.#offers = offers;
   }
 
   get points() {
@@ -16,7 +19,7 @@ export default class PointsModel extends Observable {
 
   setPoints(points) {
     this.#points = [...points];
-    this._notify('major'); // уведомим наблюдателей
+    this._notify('major');
   }
 
   getPoints() {
@@ -36,7 +39,7 @@ export default class PointsModel extends Observable {
       ...this.#points.slice(index + 1)
     ];
 
-    this._notify('minor'); // уведомим наблюдателей об изменении
+    this._notify('minor');
   }
 
   addPoint(newPoint) {
@@ -47,4 +50,11 @@ export default class PointsModel extends Observable {
     this.#points = this.#points.filter((point) => point.id !== pointToDelete.id);
   }
 
+  get destinations() {
+    return this.#destinations;
+  }
+
+  get offers() {
+    return this.#offers;
+  }
 }

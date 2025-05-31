@@ -4,3 +4,5 @@ export const generateFilters = (points) => Object.entries(filter).map(([filterTy
   type: filterType,
   count: filterPatternByType(points).length
 }));
+
+

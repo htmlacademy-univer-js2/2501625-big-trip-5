@@ -12,6 +12,8 @@ const getRandomInt = (a = 1, b = 0) => {
 
 const getTime = (date) => date.toLocaleTimeString('en-US').slice(0, 5);
 
+const generateId = () => `id-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
 export {render, getUpperFirst, getRandomInt, getTime};
 
 
@@ -42,4 +44,4 @@ const isActualPoint = (point) => {
          now.isBefore(dateTo, 'minute');
 };
 
-export { isFuturePoint, isExpiredPoint, isActualPoint };
+export { isFuturePoint, isExpiredPoint, isActualPoint, generateId };

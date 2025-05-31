@@ -1,107 +1,195 @@
-// import NewFormView from '../view/create-form-view.js';
-// import EditFormView from '../view/edit-form.js';
+import { render, remove, RenderPosition } from '../framework/render.js';
+import SortView from '../view/sort-view.js';
 // import FilterView from '../view/filters-view.js';
-// import ListElementView from '../view/list-points.js';
-// import PointView from '../view/point.js';
-// import SortView from '../view/sort-view.js';
-// import { render, replace } from '../framework/render.js';
-// import { generatePoints } from '../mock/point.js';
+import ListMessageView from '../view/list-message-view.js';
+import ListElementView from '../view/list-points-view.js';
+import PointPresenter from './point-presenter.js';
+import NewPointPresenter from './new-point-presenter.js';
+import { sortPoints, filterPoints } from '../utils/filter-sort.js';
+import { FilterType, PointAction, UpdateType, SortType, MessageBoard } from '../const.js';
 
-// export default class Presenter {
-//   #listComponent = new ListElementView();
-//   #contentContainer = null;
-//   #filterContainer = null;
-//   #points = [];
+export default class BoardPresenter {
+  #boardContainer;
+  #filterContainer;
+  #pointsModel;
+  #filterModel;
 
-//   constructor() {
-//     this.#contentContainer = document.querySelector('.trip-events');
-//     this.#filterContainer = document.querySelector('.trip-controls__filters');
-//   }
+  #filterComponent = null;
+  #sortComponent = null;
+  #pointsListComponent = null;
+  #noPointsComponent = null;
 
-//   init() {
-//     render(new FilterView(), this.#filterContainer);
-//     render(new SortView(), this.#contentContainer);
-//     render(this.#listComponent, this.#contentContainer);
+  #pointPresenters = new Map();
+  #newPointPresenter = null;
 
-//     this.#points = generatePoints(3);
-//     this.#points.forEach((point) => {
-//       this.#renderPoint(point);
-//     });
+  #currentSortType = SortType.DAY;
+  #currentFilterType = FilterType.EVERYTHING;
 
-//     // Обработчик для добавления новой формы
-//     document.querySelector('.trip-main__event-add-btn').addEventListener('click', () => {
-//       render(new NewFormView(), this.#contentContainer);
-//     });
+  constructor({ boardContainer, filterContainer, pointsModel, filterModel }) {
+    this.#boardContainer = boardContainer;
+    this.#filterContainer = filterContainer;
+    this.#pointsModel = pointsModel;
+    this.#filterModel = filterModel;
 
-//     // Добавление глобальных обработчиков событий
-//     this.#addGlobalEventListeners();
-//   }
+    this.#newPointPresenter = new NewPointPresenter(this.#boardContainer, this.#handleUserAction, this.#pointsModel);
 
-//   #addGlobalEventListeners() {
-//     // Обработчик для клавиши Esc
-//     document.addEventListener('keydown', this.#escKeyDownHandler);
+    this.#pointsModel.addObserver(this.#handleModelEvent);
+    this.#filterModel.addObserver(this.#handleModelEvent);
+  }
 
-//     // Обработчик для кнопки "Стрелка вверх" (сворачивание)
-//     document.addEventListener('click', this.#onCollapseClick);
-//   }
+  get points() {
+    this.#currentFilterType = this.#filterModel.filter;
+    const points = this.#pointsModel.getPoints();
+    const filteredPoints = filterPoints[this.#currentFilterType](points);
+    sortPoints[this.#currentSortType](filteredPoints);
+    return filteredPoints;
+  }
 
-//   #onCollapseClick = (e) => {
-//     const collapseButton = e.target.closest('.event__rollup-btn');
-//     if (collapseButton) {
-//       const editForm = document.querySelector('.event--edit');
-//       if (editForm) {
-//         const pointId = editForm.dataset.id;
-//         const point = this.#points.find((p) => p.id === pointId);
-//         if (point) {
-//           this.#replaceFormWithPoint(point, editForm);
-//         }
-//       }
-//     }
-//   };
+  init() {
+    // this.#renderFilter();
+    this.#renderBoard();
+  }
 
-//   #escKeyDownHandler = (evt) => {
-//     if (evt.key === 'Escape' || evt.key === 'Esc') {
-//       evt.preventDefault();
+  createNewPoint(callback) {
+    this.#currentSortType = SortType.DAY;
+    this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
+    this.#newPointPresenter.init(callback);
+  }
 
-//       // Нужно найти текущую открытую форму и закрыть её
-//       const openForm = this.#contentContainer.querySelector('.event--edit');
-//       if (openForm) {
-//         const pointId = openForm.dataset.id;
-//         const point = this.#points.find((p) => p.id === pointId);
-//         if (point) {
-//           this.#replaceFormWithPoint(point, openForm);
-//         }
-//       }
-//     }
-//   };
+  #handleModeChange = () => {
+    this.#newPointPresenter.destroy();
+    this.#pointPresenters.forEach((presenter) => presenter.resetView());
+  };
 
-//   #renderPoint(point) {
-//     const pointView = new PointView({
-//       point,
-//       onExpandClick: () => this.#replacePointWithForm(point, pointView),
-//     });
+  #handleUserAction = (actionType, updateType, update) => {
+    switch (actionType) {
+      case PointAction.UPDATE:
+        this.#pointsModel.updatePoint(updateType, update);
+        break;
+      case PointAction.ADD:
+        this.#pointsModel.addPoint(updateType, update);
+        break;
+      case PointAction.DELETE_POINT:
+        this.#pointsModel.deletePoint(updateType, update);
+        break;
+    }
+  };
 
-//     render(pointView, this.#listComponent.element);
-//   }
+  #handleModelEvent = (updateType, data) => {
+    switch (updateType) {
+      case UpdateType.PATCH:
+        this.#pointPresenters.get(data.id)?.init(data);
+        break;
+      case UpdateType.MINOR:
+        this.#clearBoard();
+        this.#renderBoard();
+        break;
+      case UpdateType.MAJOR:
+        this.#clearBoard({ resetSortType: true });
+        this.#renderBoard();
+        break;
+    }
+  };
 
-//   #replacePointWithForm(point, pointView) {
-//     const editFormView = new EditFormView({
-//       point,
-//       onFormSubmit: () => this.#replaceFormWithPoint(point, editFormView),
-//       onCollapseClick: () => this.#replaceFormWithPoint(point, editFormView),
-//     });
+  #handleSortTypeChange = (sortType) => {
+    if (this.#currentSortType === sortType) {
+      return;
+    }
 
-//     // Удаляем старую точку маршрута и рендерим новую форму
-//     replace(editFormView, pointView);
-//   }
+    this.#currentSortType = sortType;
+    this.#clearBoard();
+    this.#renderBoard();
+  };
 
-//   #replaceFormWithPoint(point, editFormView) {
-//     const pointView = new PointView({
-//       point,
-//       onExpandClick: () => this.#replacePointWithForm(point, pointView),
-//     });
+  #handleFilterChange = (filterType) => {
+    if (this.#currentFilterType === filterType) {
+      return;
+    }
 
-//     // Удаляем старую форму редактирования перед рендером новой точки
-//     replace(pointView, editFormView);
-//   }
-// }
+    this.#filterModel.setFilter(UpdateType.MAJOR, filterType);
+  };
+
+  // #renderFilter() {
+  //   if (this.#filterComponent) {
+  //     remove(this.#filterComponent);
+  //   }
+  //   this.#filterComponent = new FilterView({
+  //     currentFilterType: this.#filterModel.filter,
+  //     onFilterChange: this.#handleFilterChange,
+  //   });
+  //   render(this.#filterComponent, this.#filterContainer);
+  // }
+
+  #renderSort() {
+    if (this.#sortComponent) {
+      remove(this.#sortComponent);
+    }
+    this.#sortComponent = new SortView(this.#currentSortType);
+    this.#sortComponent.setSortTypeChangeHandler(this.#handleSortTypeChange);
+    render(this.#sortComponent, this.#boardContainer, RenderPosition.AFTERBEGIN);
+  }
+
+  #renderPoint(point) {
+    const pointPresenter = new PointPresenter(
+      this.#pointsListComponent.element,
+      this.#handleUserAction,
+      this.#handleModeChange,
+      this.#pointsModel
+    );
+    pointPresenter.init(point);
+    this.#pointPresenters.set(point.id, pointPresenter);
+  }
+
+  #renderPoints(points) {
+    points.forEach((point) => this.#renderPoint(point));
+  }
+
+  #renderNoPoints() {
+    this.#noPointsComponent = new ListMessageView({ message: MessageBoard.EMPTY_LIST });
+    render(this.#noPointsComponent, this.#boardContainer, RenderPosition.AFTERBEGIN);
+  }
+
+  #renderBoard() {
+    const points = this.points;
+
+    if (points.length === 0) {
+      this.#renderNoPoints();
+      return;
+    }
+
+    this.#renderSort();
+
+    if (!this.#pointsListComponent) {
+      this.#pointsListComponent = new ListElementView();
+      render(this.#pointsListComponent, this.#boardContainer);
+    }
+
+    this.#renderPoints(points);
+  }
+
+  #clearBoard({ resetSortType = false } = {}) {
+    this.#newPointPresenter.destroy();
+
+    this.#pointPresenters.forEach((presenter) => presenter.destroy());
+    this.#pointPresenters.clear();
+
+    if (this.#sortComponent) {
+      remove(this.#sortComponent);
+      this.#sortComponent = null;
+    }
+
+    if (this.#noPointsComponent) {
+      remove(this.#noPointsComponent);
+      this.#noPointsComponent = null;
+    }
+
+    if (this.#pointsListComponent) {
+      remove(this.#pointsListComponent);
+      this.#pointsListComponent = null;
+    }
+
+    if (resetSortType) {
+      this.#currentSortType = SortType.DAY;
+    }
+  }
+}

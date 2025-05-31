@@ -4,7 +4,7 @@ import FilterView from '../view/filters-view.js';
 import SortView from '../view/sort-view.js';
 import { MessageBoard } from '../const.js';
 import ListMessageView from '../view/list-message-view.js';
-import ListElementView from '../view/list-points.js';
+import ListElementView from '../view/list-points-view.js';
 // в presenter/1.js или где нужно
 import { UserAction } from '../const.js';
 

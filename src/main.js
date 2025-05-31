@@ -1,29 +1,29 @@
-import BoardPresenter from './presenter/1.js';
-import PointsModel from './model/model.js';
-// import OffersModel from './model/offers-model.js';
-// import DestinationsModel from './model/destinations-model.js';
+import BoardPresenter from './presenter/main-presenter.js';
+import PointsModel from './model/point-model.js';
 import FilterModel from './model/filter-model.js';
 import FilterPresenter from './presenter/filter-presenter.js';
 
-// Создаём модели
-const pointsModel = new PointsModel();
-// const offersModel = new OffersModel(); // ✅
-// const destinationsModel = new DestinationsModel(); // ✅
-const filterModel = new FilterModel();
+// Контейнеры из DOM
+const siteMainElement = document.querySelector('.trip-events');
+const siteFilterElement = document.querySelector('.trip-controls__filters');
 
-// Презентер доски
-const boardPresenter = new BoardPresenter({
-  pointsModel,
-  // offersModel, // ✅ передано
-  // destinationsModel, // ✅ передано
-  filterModel
-});
+// Модели
+const pointsModel = new PointsModel();
+const filterModel = new FilterModel();
 
 // Презентер фильтра
 const filterPresenter = new FilterPresenter({
-  filterContainer: document.querySelector('.trip-controls__filters'),
+  filterContainer: siteFilterElement,
   filterModel,
   pointsModel
+});
+
+// Презентер доски
+const boardPresenter = new BoardPresenter({
+  boardContainer: siteMainElement,
+  filterContainer: siteFilterElement,
+  pointsModel,
+  filterModel
 });
 
 // Инициализация

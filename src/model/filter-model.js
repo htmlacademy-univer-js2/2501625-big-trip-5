@@ -1,4 +1,4 @@
-import Observable from '../framework/observable.js'; // если у тебя есть реализация
+import Observable from '../framework/observable.js';
 import { FilterType } from '../const.js';
 
 export default class FilterModel extends Observable {
@@ -14,6 +14,6 @@ export default class FilterModel extends Observable {
     }
 
     this.#filter = newFilter;
-    this._notify(updateType); // оповестим подписчиков
+    this._notify(updateType);
   }
 }
