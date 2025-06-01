@@ -121,5 +121,27 @@ export const MessageBoard = {
   [FilterType.PAST]: 'There are no past events now',
 };
 
+export const DESTINATIONS = [
+  'Amsterdam',
+  'Geneva',
+  'Chamonix',
+  'Paris',
+  'London',
+  'Rome',
+  'Barcelona',
+  'Prague',
+  'Vienna',
+  'Berlin',
+  'Munich',
+  'Milan',
+  'Brussels',
+  'Zurich',
+  'Copenhagen',
+  'Oslo',
+  'Stockholm',
+  'Helsinki',
+  'Lisbon',
+  'Madrid'
+];
 
 export { FiltersPoint, filter };

@@ -1,6 +1,7 @@
 
 
 import AbstractView from '../framework/view/abstract-view.js';
+import { DESTINATIONS } from '../const.js';
 
 function createNewFormTemplate() {
   return (
@@ -70,12 +71,10 @@ function createNewFormTemplate() {
                     <label class="event__label  event__type-output" for="event-destination-1">
                       Flight
                     </label>
-                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="Geneva" list="destination-list-1">
+                    <input class="event__input  event__input--destination" id="event-destination-1" type="text" name="event-destination" value="" list="destination-list-1">
                     <datalist id="destination-list-1">
-                      <option value="Amsterdam"></option>
-                      <option value="Geneva"></option>
-                      <option value="Chamonix"></option>
-                    </datalist>
+            ${DESTINATIONS.map((city) => `<option value="${city}"></option>`).join('')}
+          </datalist>
                   </div>
 
                   <div class="event__field-group  event__field-group--time">
@@ -91,7 +90,8 @@ function createNewFormTemplate() {
                       <span class="visually-hidden">Price</span>
                       &euro;
                     </label>
-                    <input class="event__input  event__input--price" id="event-price-1" type="text" name="event-price" value="">
+                    <input class="event__input  event__input--price" id="event-price-1" type="number" name="event-price" min="0" required>
+
                   </div>
 
                   <button class="event__save-btn  btn  btn--blue" type="submit">Save</button>
@@ -171,7 +171,75 @@ function createNewFormTemplate() {
 }
 
 export default class NewFormView extends AbstractView {
+  _callback = {};
+
   get template() {
     return createNewFormTemplate();
   }
+
+  setSubmitHandler(callback) {
+    this._callback.submit = callback;
+    this.element.querySelector('form').addEventListener('submit', this.#formSubmitHandler);
+  }
+
+  setCancelHandler(callback) {
+    this._callback.cancel = callback;
+    this.element.querySelector('.event__reset-btn').addEventListener('click', this.#cancelClickHandler);
+  }
+
+  #cancelClickHandler = (evt) => {
+    evt.preventDefault();
+    this._callback.cancel();
+  };
+
+  #formSubmitHandler = (evt) => {
+    evt.preventDefault();
+
+    const destinationInput = this.element.querySelector('.event__input--destination');
+    const priceInput = this.element.querySelector('.event__input--price');
+
+    const destination = destinationInput.value.trim();
+    const price = priceInput.value.trim();
+
+    if (!this.#isValidDestination(destination)) {
+      return;
+    }
+
+    if (!/^\d+$/.test(price)) {
+      return;
+    }
+
+    this._callback.submit({
+      destination,
+      basePrice: Number(price),
+      // Дополнительно можно добавить offers, dates и т.п.
+    });
+  };
+
+  #isValidDestination(value) {
+    return DESTINATIONS.includes(value);
+  }
+
+  removeElement() {
+    // Удалим слушатель фильтрации, если использовали его
+    const priceInput = this.element?.querySelector('.event__input--price');
+    if (priceInput) {
+      priceInput.removeEventListener('input', this.#filterPriceInput);
+    }
+    super.removeElement();
+  }
+
+  // Автоматическая фильтрация ввода (если оставим type="text")
+  #filterPriceInput = (evt) => {
+    evt.target.value = evt.target.value.replace(/[^\d]/g, '');
+  };
+
+  // Если нужно использовать фильтрацию вместо <input type="number">
+  enablePriceFiltering() {
+    const priceInput = this.element.querySelector('.event__input--price');
+    if (priceInput) {
+      priceInput.addEventListener('input', this.#filterPriceInput);
+    }
+  }
 }
+

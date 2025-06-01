@@ -4,7 +4,7 @@ import SortView from '../view/sort-view.js';
 import ListMessageView from '../view/list-message-view.js';
 import ListElementView from '../view/list-points-view.js';
 import PointPresenter from './point-presenter.js';
-import NewPointPresenter from './new-point-presenter.js';
+import NewPointPresenter from './newpoint-presenter.js';
 import { sortPoints, filterPoints } from '../utils/filter-sort.js';
 import { FilterType, PointAction, UpdateType, SortType, MessageBoard } from '../const.js';
 
@@ -24,6 +24,9 @@ export default class BoardPresenter {
 
   #currentSortType = SortType.DAY;
   #currentFilterType = FilterType.EVERYTHING;
+  #isCreatingPoint = false;
+
+  #createPointPresenter = null;
 
   constructor({ boardContainer, filterContainer, pointsModel, filterModel }) {
     this.#boardContainer = boardContainer;
@@ -31,11 +34,29 @@ export default class BoardPresenter {
     this.#pointsModel = pointsModel;
     this.#filterModel = filterModel;
 
-    this.#newPointPresenter = new NewPointPresenter(this.#boardContainer, this.#handleUserAction, this.#pointsModel);
+    // this.#newPointPresenter = new NewPointPresenter(this.#boardContainer, this.#handleUserAction, this.#pointsModel);
 
     this.#pointsModel.addObserver(this.#handleModelEvent);
     this.#filterModel.addObserver(this.#handleModelEvent);
+
+    // this.#createPointPresenter = new NewPointPresenter(this.#pointsListComponent?.element, this.#handleUserAction);
+
+    // --- Вот сюда добавляем обработчик кнопки "Добавить событие":
+    const addButton = document.querySelector('.trip-main__event-add-btn');
+    if (addButton) {
+      addButton.addEventListener('click', (evt) => {
+        evt.preventDefault();
+
+        if (this.#isCreatingPoint) {
+          return;
+        }
+
+        this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
+        this.createPoint();
+      });
+    }
   }
+
 
   get points() {
     this.#currentFilterType = this.#filterModel.filter;
@@ -50,14 +71,34 @@ export default class BoardPresenter {
     this.#renderBoard();
   }
 
+  createPoint(callback) {
+    if (!this.#createPointPresenter) {
+      if (!this.#pointsListComponent) {
+        this.#pointsListComponent = new ListElementView();
+        render(this.#pointsListComponent, this.#boardContainer);
+      }
+      this.#createPointPresenter = new NewPointPresenter(this.#pointsListComponent.element, this.#handleUserAction);
+    }
+
+    this.#createPointPresenter.init(() => {
+      this.#isCreatingPoint = false;
+      if (callback) {
+        callback();
+      }
+    });
+
+    this.#isCreatingPoint = true;
+  }
+
   createNewPoint(callback) {
     this.#currentSortType = SortType.DAY;
     this.#filterModel.setFilter(UpdateType.MAJOR, FilterType.EVERYTHING);
-    this.#newPointPresenter.init(callback);
+    this.createPoint(callback);
+
   }
 
   #handleModeChange = () => {
-    this.#newPointPresenter.destroy();
+    // this.#newPointPresenter.destroy();
     this.#pointPresenters.forEach((presenter) => presenter.resetView());
   };
 
@@ -175,12 +216,12 @@ export default class BoardPresenter {
       this.#pointsListComponent = new ListElementView();
       render(this.#pointsListComponent, this.#boardContainer);
     }
-
+    this.#createPointPresenter = new NewPointPresenter(this.#pointsListComponent.element, this.#handleUserAction);
     this.#renderPoints(points);
   }
 
   #clearBoard({ resetSortType = false } = {}) {
-    this.#newPointPresenter.destroy();
+    // this.#newPointPresenter.destroy();
 
     this.#pointPresenters.forEach((presenter) => presenter.destroy());
     this.#pointPresenters.clear();
