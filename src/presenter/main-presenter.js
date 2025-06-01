@@ -86,10 +86,12 @@ export default class BoardPresenter {
         break;
       case UpdateType.MAJOR:
         this.#clearBoard({ resetSortType: true });
+        // this.#renderFilter();
         this.#renderBoard();
         break;
     }
   };
+
 
   #handleSortTypeChange = (sortType) => {
     if (this.#currentSortType === sortType) {
@@ -109,6 +111,7 @@ export default class BoardPresenter {
     this.#filterModel.setFilter(UpdateType.MAJOR, filterType);
   };
 
+
   // #renderFilter() {
   //   if (this.#filterComponent) {
   //     remove(this.#filterComponent);
@@ -119,6 +122,7 @@ export default class BoardPresenter {
   //   });
   //   render(this.#filterComponent, this.#filterContainer);
   // }
+
 
   #renderSort() {
     if (this.#sortComponent) {
@@ -145,9 +149,17 @@ export default class BoardPresenter {
   }
 
   #renderNoPoints() {
-    this.#noPointsComponent = new ListMessageView({ message: MessageBoard.EMPTY_LIST });
+    const message = MessageBoard[this.#currentFilterType] || MessageBoard[FilterType.EVERYTHING];
+
+    if (this.#noPointsComponent) {
+      remove(this.#noPointsComponent);
+      this.#noPointsComponent = null;
+    }
+
+    this.#noPointsComponent = new ListMessageView({ message });
     render(this.#noPointsComponent, this.#boardContainer, RenderPosition.AFTERBEGIN);
   }
+
 
   #renderBoard() {
     const points = this.points;

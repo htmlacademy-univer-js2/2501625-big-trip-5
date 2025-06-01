@@ -44,11 +44,14 @@ export default class PointsModel extends Observable {
 
   addPoint(newPoint) {
     this.#points = [newPoint, ...this.#points];
+    this._notify('minor');
   }
 
   deletePoint(pointToDelete) {
     this.#points = this.#points.filter((point) => point.id !== pointToDelete.id);
+    this._notify('minor');
   }
+
 
   get destinations() {
     return this.#destinations;

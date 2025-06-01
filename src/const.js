@@ -29,9 +29,9 @@ export const Mode = {
 };
 
 export const UpdateType = {
-  PATCH: 'PATCH',
-  MINOR: 'MINOR',
-  MAJOR: 'MAJOR',
+  PATCH: 'patch',
+  MINOR: 'minor',
+  MAJOR: 'major',
 };
 
 export const PointAction = {
@@ -115,7 +115,7 @@ export const FilterType = {
 };
 
 export const MessageBoard = {
-  EMPTY_LIST: 'Click New Event to create your first point',
+  [FilterType.EVERYTHING]: 'Click New Event to create your first point',
   [FilterType.FUTURE]: 'There are no future events now',
   [FilterType.PRESENT]: 'There are no present events now',
   [FilterType.PAST]: 'There are no past events now',
