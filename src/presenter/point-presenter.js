@@ -23,25 +23,43 @@ export default class PointPresenter {
   }
 
   init(point) {
-    this.#point = point;
+    const destination = this.#destinations.find((dest) => dest.id === point.destination);
+    const offerGroup = this.#offers.find((group) => group.type === point.type);
+    const availableOffers = offerGroup ? offerGroup.offers : [];
+
+    const mappedOffers = availableOffers.map((offer) => ({
+      ...offer,
+      isSelected: point.offers.includes(offer.id),
+    }));
+
+    const pointWithFullData = {
+      ...point,
+      destination,
+      offers: mappedOffers,
+    };
+
+    this.#point = pointWithFullData;
 
     const prevPointComponent = this.#pointComponent;
     const prevEditFormComponent = this.#editFormComponent;
 
     this.#pointComponent = new PointView({
-      point: this.#point,
+      point: pointWithFullData,
+      destinations: this.#destinations,
+      offers: this.#offers,
       onEditClick: this.#handleEditClick,
       onFavoriteClick: this.#handleFavoriteClick,
     });
 
     this.#editFormComponent = new EditFormView({
-      point: this.#point,
+      point: pointWithFullData,
       destinations: this.#destinations,
       offers: this.#offers,
       onFormSubmit: this.#handleFormSubmit,
-      onCloseClick: this.#handleCloseClick,
       onDeleteClick: this.#handleDeleteClick,
     });
+
+    this.#editFormComponent.setCloseClickHandler(this.#handleCloseClick);
 
     if (!prevPointComponent || !prevEditFormComponent) {
       render(this.#pointComponent, this.#pointListContainer);
@@ -49,7 +67,7 @@ export default class PointPresenter {
       return;
     }
 
-    if (this.#mode === Mode.PREVIEW) {
+    if (this.#mode === Mode.DEFAULT) {
       replace(this.#pointComponent, prevPointComponent);
       this.#pointComponent.setHandlers();
     }
@@ -62,29 +80,38 @@ export default class PointPresenter {
     remove(prevEditFormComponent);
   }
 
+
+  setOnModeChange(callback) {
+    this.#changeMode = callback;
+  }
+
   destroy() {
     remove(this.#pointComponent);
     remove(this.#editFormComponent);
   }
 
   resetView() {
-    if (this.#mode !== Mode.PREVIEW) {
+    console.log(this.#mode !== Mode.DEFAULT, this.#mode);
+    if (this.#mode === Mode.EDITING) {
       this.#editFormComponent.reset(this.#point);
       this.#replaceEditFormToPoint();
     }
   }
 
   #replacePointToEditForm() {
+    console.log('start');
     replace(this.#editFormComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#onEscKeyDown);
     this.#changeMode();
     this.#mode = Mode.EDITING;
+    console.log(this.#mode !== Mode.DEFAULT, this.#mode);
   }
 
   #replaceEditFormToPoint() {
+    console.log('end');
     replace(this.#pointComponent, this.#editFormComponent);
     document.removeEventListener('keydown', this.#onEscKeyDown);
-    this.#mode = Mode.PREVIEW;
+    this.#mode = Mode.DEFAULT;
   }
 
   #onEscKeyDown = (evt) => {

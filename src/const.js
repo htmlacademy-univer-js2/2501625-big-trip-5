@@ -29,10 +29,13 @@ export const Mode = {
 };
 
 export const UpdateType = {
-  PATCH: 'patch',
-  MINOR: 'minor',
-  MAJOR: 'major',
+  PATCH: 'PATCH',
+  MINOR: 'MINOR',
+  MAJOR: 'MAJOR',
+  INIT: 'INIT',
+  LOADING: 'LOADING',
 };
+
 
 export const PointAction = {
   UPDATE: 'UPDATE',

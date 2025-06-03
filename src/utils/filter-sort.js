@@ -15,18 +15,18 @@ export const filterPoints = {
 
 
 function sortDay(DayA, DayB){
-  return dayjs(DayA.startTime).diff(dayjs(DayB.startTime));
+  return dayjs(DayA.dateFrom).diff(dayjs(DayB.dateFrom));
 }
 
 function sortTime(timeA, timeB){
-  const timeDif1 = dayjs(timeA.finishTime).diff(dayjs(timeA.startTime));
-  const timeDif2 = dayjs(timeB.finishTime).diff(dayjs(timeB.startTime));
+  const timeDif1 = dayjs(timeA.dateTo).diff(dayjs(timeA.dateFrom));
+  const timeDif2 = dayjs(timeB.dateTo).diff(dayjs(timeB.dateFrom));
 
   return timeDif2 - timeDif1;
 }
 
 function sortPrice(priceA, priceB) {
-  return priceB.price - priceA.price;
+  return priceB.basePrice - priceA.basePrice;
 }
 
 export const sortPoints = {

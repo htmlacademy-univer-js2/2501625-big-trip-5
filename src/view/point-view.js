@@ -6,23 +6,32 @@ import he from 'he';
 
 dayjs.extend(durationPlugin);
 
-function createOfferList(allOffers, selectedOfferIds) {
-  return allOffers
-    .filter((offer) => selectedOfferIds.includes(offer.id))
+function createOfferList(selectedOfferIds) {
+  if (!Array.isArray(selectedOfferIds)) {
+    return '';
+  }
+
+  return selectedOfferIds
+    .filter((offer) => offer.isSelected === true)
     .map((offer) => `
       <li class="event__offer">
-        <span class="event__offer-title">${he.encode(offer.title)}</span>
+        <span class="event__offer-title">${offer.title}</span>
         &plus;&euro;&nbsp;<span class="event__offer-price">${offer.price}</span>
       </li>
     `)
     .join('');
 }
 
-function createPointTemplate(point, destinations, offers) {
-  const {basePrice, type, destinationId,isFavorite, dateFrom, dateTo, offerIds} = point;
+function createPointTemplate(point, destinations, offers1) {
+  const {basePrice, type, destinationId,isFavorite, dateFrom, dateTo, offers} = point;
 
-  const destination = destinations.find((d) => d.id === destinationId);
-  const pointOffers = offers.find((o) => o.type === type)?.offers ?? [];
+  const destination = destinations?.find((d) => d.id === destinationId) ?? null;
+  const pointOffers = offers1?.find((o) => o.type === type)?.offers1 ?? [];
+  console.log('point', point);
+  console.log('offers1', offers);
+  console.log('pointOffers', pointOffers);
+  console.log('offers', offers);
+
 
   const start = dayjs(dateFrom);
   const end = dayjs(dateTo);
@@ -32,7 +41,7 @@ function createPointTemplate(point, destinations, offers) {
   const endTime = end.format('HH:mm');
   const duration = formatDuration(start, end);
 
-  const offersTemplate = createOfferList(pointOffers, offerIds);
+  const offersTemplate = createOfferList(offers);
 
   return `
     <li class="trip-events__item">
@@ -69,7 +78,6 @@ function createPointTemplate(point, destinations, offers) {
   `;
 }
 
-// 📦 View-класс
 export default class PointView extends AbstractView {
   #point = null;
   #destinations = null;

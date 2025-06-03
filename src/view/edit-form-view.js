@@ -4,6 +4,14 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
+const renderDestinationPictures = (pictures) => {
+  if (!Array.isArray(pictures) || pictures.length === 0) {
+    return '';
+  }
+  return pictures
+    .map((picture) => `<img class="event__photo" src="${picture.src}" alt="${picture.description}">`)
+    .join('');
+};
 
 function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, basePrice, offers }) {
   const formattedDateFrom = dayjs(dateFrom).format('DD/MM/YY HH:mm');
@@ -73,7 +81,7 @@ function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, bas
           </div>
 
           <div class="event__field-group event__field-group--destination">
-            <label class="event__label event__type-output" for="event-destination-1">${destination.name}</label>
+            <label class="event__label event__type-output" for="event-destination-1">${type}</label>
             <input class="event__input event__input--destination" id="event-destination-1" type="text" name="event-destination" value="${destination.name}" list="destination-list-1">
             <datalist id="destination-list-1">
               <option value="Amsterdam"></option>
@@ -123,6 +131,11 @@ function createEditRoutePointTemplate({ type, destination, dateFrom, dateTo, bas
           <section class="event__section event__section--destination">
             <h3 class="event__section-title event__section-title--destination">Destination</h3>
             <p class="event__destination-description">${destination.description}</p>
+            <div class="event__photos-container">
+              <div class="event__photos-tape">
+              ${renderDestinationPictures(destination.pictures)}
+              </div>
+            </div>
           </section>
         </section>
       </form>
@@ -216,6 +229,11 @@ export default class EditRoutePointView extends AbstractStatefulView {
     }
   };
 
+  setCloseClickHandler(callback) {
+    this.#handleCloseClick = callback;
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#closeClickHandler);
+  }
 
   #setInnerHandlers() {
     this.element.querySelectorAll('.event__type-input')
@@ -247,6 +265,12 @@ export default class EditRoutePointView extends AbstractStatefulView {
       }
     });
   };
+
+  reset(point) {
+    this.updateElement(
+      EditRoutePointView.parsePointToState(point)
+    );
+  }
 
   static parsePointToState(point) {
     return { ...point };
