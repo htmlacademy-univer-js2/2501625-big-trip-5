@@ -13,16 +13,29 @@ export const GroupToPretext = {
 };
 
 export const PointType = {
-  TAXI: 'Taxi',
-  BUS: 'Bus',
-  TRAIN: 'Train',
-  SHIP: 'Ship',
-  DRIVE: 'Drive',
-  FLIGHT: 'Flight',
-  CHECK_IN: 'Check-in',
-  SIGHTSEEING: 'Sightseeing',
-  RESTAURANT: 'Restaurant'
+  TAXI: 'taxi',
+  BUS: 'bus',
+  TRAIN: 'train',
+  SHIP: 'ship',
+  DRIVE: 'drive',
+  FLIGHT: 'flight',
+  CHECK_IN: 'check-in',
+  SIGHTSEEING: 'sightseeing',
+  RESTAURANT: 'restaurant'
 };
+
+export const PointTypeDescription = {
+  [PointType.BUS]: 'Bus',
+  [PointType.SHIP]: 'Ship',
+  [PointType.RESTAURANT]: 'Restaurant',
+  [PointType.TAXI]: 'Taxi',
+  [PointType.DRIVE]: 'Drive',
+  [PointType.FLIGHT]: 'Flight',
+  [PointType.TRAIN]: 'Train',
+  [PointType.CHECK_IN]: 'Check-in',
+  [PointType.SIGHTSEEING]: 'Sightseeing'
+};
+
 export const Mode = {
   DEFAULT: 'default',
   EDITING: 'editing',

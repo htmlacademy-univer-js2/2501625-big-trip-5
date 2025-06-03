@@ -67,6 +67,8 @@ export default class BoardPresenter {
     this.#currentFilterType = this.#filterModel.filter;
     const points = this.#pointsModel.getPoints();
     const filteredPoints = filterPoints[this.#currentFilterType](points);
+    // console.log('Текущий фильтр:', this.#currentFilterType);
+    // console.log('Отфильтрованные точки:', filteredPoints);
     const sortedPoints = sortPoints[this.#currentSortType](filteredPoints);
     return sortedPoints;
   }
@@ -140,7 +142,7 @@ export default class BoardPresenter {
   };
 
   #handleModelEvent = (updateType, data) => {
-    console.log('Model event:', updateType, data);
+    // console.log('Model event:', updateType, data);
     switch (updateType) {
       case 'loading':
         this.#isLoading = true;
@@ -209,8 +211,6 @@ export default class BoardPresenter {
   }
 
   #renderPoint(point) {
-    console.log('Offers:', this.#pointsModel.offers);
-    console.log('Destinations:', this.#pointsModel.destinations);
     const pointPresenter = new PointPresenter({
       pointListContainer: this.#pointsListComponent.element,
       changeData: this.#handleUserAction,

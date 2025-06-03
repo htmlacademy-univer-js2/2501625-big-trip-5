@@ -21,7 +21,7 @@ export default class PointsModel extends Observable {
     this._notify('loading');
     try {
       const points = await this.#pointsApiService.points;
-      console.log('Points from API:', points);
+      // console.log('Points from API:', points);
       const destinations = await this.#destinationsApiService.destinations;
       const offers = await this.#offersApiService.offers;
 
@@ -34,7 +34,7 @@ export default class PointsModel extends Observable {
       this.#points = [];
       this.#destinations = [];
       this.#offers = [];
-      console.error('Points loading error:', error);
+      // console.error('Points loading error:', error);
 
       this._notify('init');
     }
@@ -61,21 +61,29 @@ export default class PointsModel extends Observable {
     return this.#points;
   }
 
-  updatePoint(updatedPoint) {
+  async updatePoint(updateType, updatedPoint) {
     const index = this.#points.findIndex((point) => point.id === updatedPoint.id);
 
     if (index === -1) {
       throw new Error(`Can't update unexisting point (id: ${updatedPoint.id})`);
     }
 
-    this.#points = [
-      ...this.#points.slice(0, index),
-      updatedPoint,
-      ...this.#points.slice(index + 1),
-    ];
+    try {
+      const response = await this.#pointsApiService.updatePoint(updatedPoint);
+      const adaptedPoint = this.#adaptToClient(response);
 
-    this._notify('minor');
+      this.#points = [
+        ...this.#points.slice(0, index),
+        adaptedPoint,
+        ...this.#points.slice(index + 1),
+      ];
+
+      this._notify(updateType, adaptedPoint);
+    } catch (error) {
+      throw new Error(`Can't update point: ${error}`);
+    }
   }
+
 
   addPoint(newPoint) {
     this.#points = [newPoint, ...this.#points];

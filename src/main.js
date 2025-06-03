@@ -44,7 +44,7 @@ const boardPresenter = new BoardPresenter({
 const startApp = async () => {
   filterPresenter.init();
   await pointsModel.init();
-  console.log('Точки загружены:', pointsModel.getPoints());
+  // console.log('Точки загружены:', pointsModel.getPoints());
   boardPresenter.init();
 };
 

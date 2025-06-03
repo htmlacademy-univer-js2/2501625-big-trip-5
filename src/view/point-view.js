@@ -23,14 +23,10 @@ function createOfferList(selectedOfferIds) {
 }
 
 function createPointTemplate(point, destinations, offers1) {
-  const {basePrice, type, destinationId,isFavorite, dateFrom, dateTo, offers} = point;
+  const {basePrice, type, destination, isFavorite, dateFrom, dateTo, offers} = point;
 
-  const destination = destinations?.find((d) => d.id === destinationId) ?? null;
-  const pointOffers = offers1?.find((o) => o.type === type)?.offers1 ?? [];
-  console.log('point', point);
-  console.log('offers1', offers);
-  console.log('pointOffers', pointOffers);
-  console.log('offers', offers);
+  const destination1 = destinations?.find((d) => d.id === destination.id) ?? null;
+  // const pointOffers = offers1?.find((o) => o.type === type)?.offers1 ?? [];
 
 
   const start = dayjs(dateFrom);
@@ -50,7 +46,7 @@ function createPointTemplate(point, destinations, offers1) {
         <div class="event__type">
           <img class="event__type-icon" width="42" height="42" src="img/icons/${type}.png" alt="Event type icon">
         </div>
-        <h3 class="event__title">${he.encode(type)} ${destination ? he.encode(destination.name) : ''}</h3>
+        <h3 class="event__title">${he.encode(type)} ${destination1 ? he.encode(destination1.name) : ''}</h3>
         <div class="event__schedule">
           <p class="event__time">
             <time class="event__start-time" datetime="${dateFrom}">${startTime}</time>

@@ -60,6 +60,7 @@ export default class PointPresenter {
     });
 
     this.#editFormComponent.setCloseClickHandler(this.#handleCloseClick);
+    this.#editFormComponent._restoreHandlers();
 
     if (!prevPointComponent || !prevEditFormComponent) {
       render(this.#pointComponent, this.#pointListContainer);
@@ -91,7 +92,7 @@ export default class PointPresenter {
   }
 
   resetView() {
-    console.log(this.#mode !== Mode.DEFAULT, this.#mode);
+    // console.log(this.#mode !== Mode.DEFAULT, this.#mode);
     if (this.#mode === Mode.EDITING) {
       this.#editFormComponent.reset(this.#point);
       this.#replaceEditFormToPoint();
@@ -99,16 +100,14 @@ export default class PointPresenter {
   }
 
   #replacePointToEditForm() {
-    console.log('start');
+    // console.log('start');
     replace(this.#editFormComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#onEscKeyDown);
     this.#changeMode();
     this.#mode = Mode.EDITING;
-    console.log(this.#mode !== Mode.DEFAULT, this.#mode);
   }
 
   #replaceEditFormToPoint() {
-    console.log('end');
     replace(this.#pointComponent, this.#editFormComponent);
     document.removeEventListener('keydown', this.#onEscKeyDown);
     this.#mode = Mode.DEFAULT;
@@ -137,14 +136,22 @@ export default class PointPresenter {
     this.resetView();
   };
 
-  #handleFormSubmit = (updatedPoint) => {
-    this.#changeData(
-      PointAction.UPDATE,
-      UpdateType.MINOR,
-      updatedPoint,
-    );
-    this.#replaceEditFormToPoint();
+  #handleFormSubmit = async (updatedPoint) => {
+    this.#editFormComponent.setSaving(); // Показываем индикатор "сохранения"
+
+    try {
+      await this.#changeData(
+        PointAction.UPDATE,
+        UpdateType.MINOR,
+        updatedPoint
+      );
+
+      this.#replaceEditFormToPoint(); // Скрываем форму только после успешного ответа
+    } catch (err) {
+      this.#editFormComponent.setAborting(); // Показываем ошибку (shake + сброс состояния кнопок)
+    }
   };
+
 
   #handleDeleteClick = () => {
     this.#changeData(

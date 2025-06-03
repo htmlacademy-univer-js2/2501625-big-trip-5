@@ -30,6 +30,8 @@ export default class PointsApiService extends ApiService {
       'date_from': point.dateFrom instanceof Date ? point.dateFrom.toISOString() : null,
       'date_to': point.dateTo instanceof Date ? point.dateTo.toISOString() : null,
       'is_favorite': point.isFavorite,
+      'destination': point.destination.id,
+      'offers': point.offers.map((offer) => offer.id),
     };
 
     delete adaptedPoint.basePrice;
@@ -39,5 +41,6 @@ export default class PointsApiService extends ApiService {
 
     return adaptedPoint;
   }
+
 
 }
