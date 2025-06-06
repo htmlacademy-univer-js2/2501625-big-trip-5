@@ -3,54 +3,40 @@ import Observable from '../framework/observable.js';
 
 export default class PointsModel extends Observable {
   #points = [];
-  #destinations = [];
-  #offers = [];
 
-  #pointsApiService = null;
-  #destinationsApiService = null;
-  #offersApiService = null;
+  #pointsApiService;
 
-  constructor({ pointsApiService, destinationsApiService, offersApiService }) {
+  constructor(pointsApiService) {
     super();
     this.#pointsApiService = pointsApiService;
-    this.#destinationsApiService = destinationsApiService;
-    this.#offersApiService = offersApiService;
   }
+
+  #hasError = false;
 
   async init() {
     this._notify('loading');
     try {
       const points = await this.#pointsApiService.points;
-      // console.log('Points from API:', points);
-      const destinations = await this.#destinationsApiService.destinations;
-      const offers = await this.#offersApiService.offers;
-
       this.#points = points.map(this.#adaptToClient);
-      this.#destinations = destinations;
-      this.#offers = offers;
-
+      this.#hasError = false;
       this._notify('init');
     } catch (error) {
       this.#points = [];
-      this.#destinations = [];
-      this.#offers = [];
-      // console.error('Points loading error:', error);
-
-      this._notify('init');
+      this.#hasError = true;
+      this._notify('error');
     }
   }
+
+
+  get hasError() {
+    return this.#hasError;
+  }
+
 
   get points() {
     return this.#points;
   }
 
-  get destinations() {
-    return this.#destinations;
-  }
-
-  get offers() {
-    return this.#offers;
-  }
 
   setPoints(points) {
     this.#points = [...points];
@@ -85,15 +71,36 @@ export default class PointsModel extends Observable {
   }
 
 
-  addPoint(newPoint) {
-    this.#points = [newPoint, ...this.#points];
-    this._notify('minor');
+  async addPoint(updateType, newPoint) {
+    try {
+      const response = await this.#pointsApiService.addPoint(newPoint);
+      const adaptedPoint = this.#adaptToClient(response);
+      this.#points = [adaptedPoint, ...this.#points];
+      this._notify(updateType, adaptedPoint);
+    } catch (error) {
+      throw new Error(`Can't add point: ${error}`);
+    }
   }
 
-  deletePoint(pointToDelete) {
-    this.#points = this.#points.filter((point) => point.id !== pointToDelete.id);
-    this._notify('minor');
+
+  async deletePoint(updateType, pointToDelete) {
+    const index = this.#points.findIndex((point) => point.id === pointToDelete.id);
+    if (index === -1) {
+      throw new Error(`Can't delete unexisting point (id: ${pointToDelete.id})`);
+    }
+
+    try {
+      await this.#pointsApiService.deletePoint(pointToDelete);
+      this.#points = [
+        ...this.#points.slice(0, index),
+        ...this.#points.slice(index + 1),
+      ];
+      this._notify(updateType);
+    } catch (error) {
+      throw new Error(`Can't delete point: ${error}`);
+    }
   }
+
 
   #adaptToClient(point) {
     const adaptedPoint = {

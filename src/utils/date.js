@@ -1,26 +1,26 @@
-// utils/date.js
 import dayjs from 'dayjs';
 import durationPlugin from 'dayjs/plugin/duration.js';
 dayjs.extend(durationPlugin);
 
-export function formatDuration(start, end) {
-  const diff = dayjs(end).diff(dayjs(start));
-  const dur = dayjs.duration(diff);
+function padNumber(num) {
+  return num < 10 ? `0${num}` : `${num}`;
+}
 
-  const days = dur.days();
+export function formatDuration(start, end) {
+  const diffMs = dayjs(end).diff(dayjs(start));
+
+  const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const dur = dayjs.duration(diffMs);
+
   const hours = dur.hours();
   const minutes = dur.minutes();
 
   const parts = [];
-  if (days) {
-    parts.push(`${days}D`);
+  if (totalDays) {
+    parts.push(`${padNumber(totalDays)}d`);
   }
-  if (hours) {
-    parts.push(`${hours}H`);
-  }
-  if (minutes) {
-    parts.push(`${minutes}M`);
-  }
+  parts.push(`${padNumber(hours)}h`);
+  parts.push(`${padNumber(minutes)}m`);
 
-  return parts.join(' ') || '0M';
+  return parts.join(' ');
 }

@@ -45,17 +45,32 @@ const renderOffersContainer = (allOffers, checkedOffers, isDisabled) => !allOffe
 const renderDestinationNames = (destinations) =>
   destinations?.map((dest) => `<option value="${he.encode(dest.name)}"></option>`).join('') || '';
 
-const renderDestinationContainer = (destination) =>
-  destination ? `
+const renderDestinationContainer = (destination) => {
+  if (!destination) {
+    return '';
+  }
+
+  const hasDescription = destination.description?.trim();
+  const hasPictures = Array.isArray(destination.pictures) && destination.pictures.length > 0;
+
+  // Если нет ни описания, ни фото — ничего не рендерим
+  if (!hasDescription && !hasPictures) {
+    return '';
+  }
+
+  return `
     <section class="event__section event__section--destination">
       <h3 class="event__section-title event__section-title--destination">Destination</h3>
-      <p class="event__destination-description">${destination.description || ''}</p>
-      <div class="event__photos-container">
-        <div class="event__photos-tape">
-          ${renderDestinationPictures(destination.pictures)}
-        </div>
-      </div>
-    </section>` : '';
+      ${hasDescription ? `<p class="event__destination-description">${destination.description}</p>` : ''}
+      ${hasPictures ? `
+        <div class="event__photos-container">
+          <div class="event__photos-tape">
+            ${renderDestinationPictures(destination.pictures)}
+          </div>
+        </div>` : ''}
+    </section>`;
+};
+
 
 const renderEditPointDateTemplate = (dateFrom, dateTo, isDisabled) => `
   <div class="event__field-group event__field-group--time">
@@ -116,15 +131,12 @@ const createEditRoutePointTemplate = (point, destinations, offersByType, isNewPo
     isSaving,
     isDeleting
   } = point;
-
   const destinationData = destinations.find((dest) => dest.id === destination.id);
 
   const currentOffers = offers1.find((offer) => offer.type === type);
-  const selectedOffers = Array.isArray(point.offers)
-    ? point.offers
-      .filter((offer) => offer.isSelected)
-      .map((offer) => offer.id)
-    : [];
+  const selectedOffers = point.offers
+    .filter((offer) => offer.isSelected)
+    .map((offer) => offer.id);
 
 
   return `
@@ -191,6 +203,16 @@ const createEditRoutePointTemplate = (point, destinations, offersByType, isNewPo
     </li>`;
 };
 
+const DEFAULT_POINT = {
+  type: 'flight',
+  destination: 0,
+  dateFrom: new Date(),
+  dateTo: new Date(),
+  basePrice: 0,
+  offers: [],
+};
+
+
 export default class EditRoutePointView extends AbstractStatefulView {
   #destinations = [];
   #offers = [];
@@ -201,17 +223,25 @@ export default class EditRoutePointView extends AbstractStatefulView {
   #handleCloseClick = null;
   #handleDeleteClick = null;
 
-  constructor({ point, destinations, offers, isNewPoint = false, onFormSubmit, onCloseClick }) {
+  constructor({ point = DEFAULT_POINT, destinations = [], offers, isNewPoint = false, onFormSubmit, onCloseClick, onDeleteClick }) {
     super();
     this.#destinations = destinations;
     this.#offers = offers;
     this.#isNewPoint = isNewPoint;
     this.#handleFormSubmit = onFormSubmit;
     this.#handleCloseClick = onCloseClick;
+    this.#handleDeleteClick = onDeleteClick;
+    // console.log('destinations', destinations);
 
-    this._state = EditRoutePointView.parsePointToState(point);
+    // Преобразуем "сырой" point в state
+    // const preparedPoint = EditRoutePointView.#preparePoint(point, offers);
+    this._state = EditRoutePointView.parsePointToState(
+      EditRoutePointView.#preparePoint(point, offers)
+    );
+
     this._restoreHandlers();
   }
+
 
   get template() {
     const offersByType = this.#offers.find((offer) => offer.type === this._state.type);
@@ -316,6 +346,7 @@ export default class EditRoutePointView extends AbstractStatefulView {
       .addEventListener('change', this.#priceChangeHandler);
 
     const offersContainer = this.element.querySelector('.event__available-offers');
+    // console.log('offersContainer', offersContainer);
     if (offersContainer) {
       offersContainer.addEventListener('change', this.#offersChangeHandler);
     }
@@ -358,9 +389,10 @@ export default class EditRoutePointView extends AbstractStatefulView {
     const selectedName = evt.target.value;
     const selectedDestination = this.#destinations.find((dest) => dest.name === selectedName);
 
-    if (selectedDestination) {
+    if (selectedDestination &&
+    (this._state.destination?.name !== selectedDestination.name)) {
       this.updateElement({
-        destination: selectedDestination.id
+        destination: selectedDestination
       });
     }
   };
@@ -414,6 +446,7 @@ export default class EditRoutePointView extends AbstractStatefulView {
       .addEventListener('click', this.#closeClickHandler);
   }
 
+
   static parsePointToState(point) {
     return {
       ...point,
@@ -436,5 +469,45 @@ export default class EditRoutePointView extends AbstractStatefulView {
       offers: point.offers.filter((offer) => offer.isSelected)
     };
   }
+
+  static #preparePoint(point, allOffers = []) {
+    // console.log('Point offers (raw):', point.offers);
+
+    let selectedOfferIds = [];
+
+    if (Array.isArray(point.offers) && point.offers.length > 0) {
+      if (typeof point.offers[0] === 'object') {
+        if (Object.prototype.hasOwnProperty.call(point.offers[0], 'isSelected')) {
+          selectedOfferIds = point.offers.filter((offer) => offer.isSelected).map((offer) => offer.id);
+        } else {
+          selectedOfferIds = point.offers.map((offer) => offer.id);
+        }
+      } else {
+        selectedOfferIds = point.offers;
+      }
+    } else {
+      selectedOfferIds = [];
+    }
+
+    // console.log('Selected offer IDs:', selectedOfferIds);
+
+    const offerGroup = allOffers.find((group) => group.type === point.type);
+    const availableOffers = offerGroup ? offerGroup.offers : [];
+
+    const mappedOffers = availableOffers.map((offer) => {
+      const isSelected = selectedOfferIds.includes(offer.id);
+      // console.log(`Offer id ${offer.id} selected:`, isSelected);
+      return {
+        ...offer,
+        isSelected,
+      };
+    });
+
+    return {
+      ...point,
+      offers: mappedOffers
+    };
+  }
+
 
 }

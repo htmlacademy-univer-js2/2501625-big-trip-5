@@ -1,4 +1,5 @@
-import AbstractView from '../framework/view/abstract-view.js';
+// import AbstractView from '../framework/view/abstract-view.js';
+import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import dayjs from 'dayjs';
 import durationPlugin from 'dayjs/plugin/duration.js';
 import { formatDuration } from '../utils/date.js';
@@ -22,7 +23,7 @@ function createOfferList(selectedOfferIds) {
     .join('');
 }
 
-function createPointTemplate(point, destinations, offers1) {
+function createPointTemplate(point, destinations) {
   const {basePrice, type, destination, isFavorite, dateFrom, dateTo, offers} = point;
 
   const destination1 = destinations?.find((d) => d.id === destination.id) ?? null;
@@ -74,7 +75,7 @@ function createPointTemplate(point, destinations, offers1) {
   `;
 }
 
-export default class PointView extends AbstractView {
+export default class PointView extends AbstractStatefulView {
   #point = null;
   #destinations = null;
   #offers = null;
@@ -90,7 +91,7 @@ export default class PointView extends AbstractView {
   }
 
   get template() {
-    return createPointTemplate(this.#point, this.#destinations, this.#offers);
+    return createPointTemplate(this.#point, this.#destinations);
   }
 
   setHandlers() {
@@ -104,6 +105,19 @@ export default class PointView extends AbstractView {
     evt.preventDefault();
     this._callback.editClick?.();
   };
+
+  setAborting() {
+    const resetElementState = () => {
+      this.updateElement({
+        isDisabled: false,
+        isSaving: false,
+        isDeleting: false,
+      });
+    };
+
+    this.shake(resetElementState);
+  }
+
 
   #favoriteClickHandler = (evt) => {
     evt.preventDefault();

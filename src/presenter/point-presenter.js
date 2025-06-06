@@ -18,8 +18,8 @@ export default class PointPresenter {
     this.#pointListContainer = pointListContainer;
     this.#changeData = changeData;
     this.#changeMode = changeMode;
-    this.#destinations = destinations;
-    this.#offers = offers;
+    this.#destinations = destinations.destinations;
+    this.#offers = offers.offers;
   }
 
   init(point) {
@@ -60,6 +60,7 @@ export default class PointPresenter {
     });
 
     this.#editFormComponent.setCloseClickHandler(this.#handleCloseClick);
+
     this.#editFormComponent._restoreHandlers();
 
     if (!prevPointComponent || !prevEditFormComponent) {
@@ -120,16 +121,28 @@ export default class PointPresenter {
     }
   };
 
-  #handleFavoriteClick = () => {
-    this.#changeData(
-      PointAction.UPDATE,
-      UpdateType.PATCH,
-      { ...this.#point, isFavorite: !this.#point.isFavorite },
-    );
+  #handleFavoriteClick = async () => {
+    const updatedPoint = { ...this.#point, isFavorite: !this.#point.isFavorite };
+
+    try {
+      await this.#changeData(PointAction.UPDATE, UpdateType.PATCH, updatedPoint);
+      // Если нужно, можно обновить локальный state здесь,
+      // но обычно это делает модель, а в презентере просто ререндер по данным
+    } catch (error) {
+      // console.error('Ошибка при обновлении избранного:', error);
+      // Можно вызвать метод для показа shake-анимации, например:
+      if (this.#editFormComponent) {
+        this.#editFormComponent.setAborting();
+      } else if (this.#pointComponent) {
+        this.#pointComponent.shake?.();
+      }
+    }
   };
+
 
   #handleEditClick = () => {
     this.#replacePointToEditForm();
+    this.#changeMode(this);
   };
 
   #handleCloseClick = () => {
@@ -137,7 +150,7 @@ export default class PointPresenter {
   };
 
   #handleFormSubmit = async (updatedPoint) => {
-    this.#editFormComponent.setSaving(); // Показываем индикатор "сохранения"
+    this.#editFormComponent.setSaving();
 
     try {
       await this.#changeData(
@@ -146,18 +159,29 @@ export default class PointPresenter {
         updatedPoint
       );
 
-      this.#replaceEditFormToPoint(); // Скрываем форму только после успешного ответа
+      this.#replaceEditFormToPoint();
     } catch (err) {
-      this.#editFormComponent.setAborting(); // Показываем ошибку (shake + сброс состояния кнопок)
+      this.#editFormComponent.setAborting();
     }
   };
 
 
-  #handleDeleteClick = () => {
-    this.#changeData(
-      PointAction.DELETE,
-      UpdateType.MINOR,
-      this.#point,
-    );
+  #handleDeleteClick = async () => {
+    this.#editFormComponent.setDeleting(); // Блокируем интерфейс, меняем кнопку на "Deleting..."
+
+    try {
+      await this.#changeData(
+        PointAction.DELETE,
+        UpdateType.MINOR,
+        this.#point,
+      );
+
+      // После успешного удаления, можно закрыть форму/удалить компонент
+      // Вариант:
+      // this.destroy(); // если ты хочешь полностью убрать компонент
+    } catch (err) {
+      this.#editFormComponent.setAborting(); // Shake + разблокировка интерфейса при ошибке
+    }
   };
+
 }

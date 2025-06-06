@@ -1,35 +1,50 @@
-import NewFormView from '../view/create-form-view.js'; // если у тебя NewFormView, проверь имя
+import EditFormView from '../view/edit-form-view.js';
 import { render, remove, RenderPosition } from '../framework/render.js';
 import { PointAction, UpdateType } from '../const.js';
-
 export default class NewPointPresenter {
   #container = null;
   #handleDataChange = null;
   #destroyCallback = null;
-
+  #changeData = null;
+  #changeMode = null;
+  #destinations = [];
+  #offers = [];
   #formComponent = null;
+  #point = null;
 
-  constructor(container, handleDataChange) {
+  constructor({ container, changeData, changeMode, destinations, offers }) {
     this.#container = container;
-    this.#handleDataChange = handleDataChange;
+    // console.log('Container:', this.#container);
+    this.#changeData = changeData;
+    this.#changeMode = changeMode;
+    this.#destinations = destinations.destinations;
+    this.#offers = offers.offers;
   }
 
-  init(callback) {
+
+  init(container, callback) {
+    this.#container = container;
     this.#destroyCallback = callback;
 
     if (this.#formComponent !== null) {
       return;
     }
 
-    this.#formComponent = new NewFormView();
+    this.#formComponent = new EditFormView({
+      destinations: this.#destinations,
+      offers: this.#offers,
+      isNewPoint: true,
+      onFormSubmit: this.#handleFormSubmit,
+      onCloseClick: this.#handleCancelClick,
+      onDeleteClick: this.#handleDeleteClick,
+    });
 
-    this.#formComponent.setSubmitHandler(this.#handleFormSubmit);
-    this.#formComponent.setCancelHandler(this.#handleCancelClick);
 
     render(this.#formComponent, this.#container, RenderPosition.AFTERBEGIN);
 
     document.addEventListener('keydown', this.#escKeyDownHandler);
   }
+
 
   destroy() {
     if (this.#formComponent === null) {
@@ -46,16 +61,24 @@ export default class NewPointPresenter {
     }
   }
 
-  #handleFormSubmit = (point) => {
-    this.#handleDataChange(
-      PointAction.ADD,
-      UpdateType.MAJOR,
-      point
-    );
-    this.destroy(); // форма убирается после сохранения
+  #handleFormSubmit = async (point) => {
+    this.#formComponent.setSaving();
+    try {
+      await this.#changeData(PointAction.ADD, UpdateType.MAJOR, point);
+      // УДАЛИ this.destroy();
+      // Родитель (BoardPresenter) должен сам убрать форму, т.к. произойдёт перерисовка
+    } catch (error) {
+      // console.error('Ошибка добавления точки:', error);
+      this.#formComponent.setAborting(); // форма остаётся открытой, shake + кнопки активны
+    }
   };
 
+
   #handleCancelClick = () => {
+    this.destroy();
+  };
+
+  #handleDeleteClick = () => {
     this.destroy();
   };
 
