@@ -1,5 +1,6 @@
 import { FilterType, SortType } from '../const.js';
-import dayjs from 'dayjs'; // если ты его используешь
+import dayjs from 'dayjs';
+
 
 export const filterPoints = {
   [FilterType.EVERYTHING]: (points) => points,

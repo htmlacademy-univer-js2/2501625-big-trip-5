@@ -3,10 +3,9 @@ import { render, remove, RenderPosition } from '../framework/render.js';
 import { PointAction, UpdateType } from '../const.js';
 export default class NewPointPresenter {
   #container = null;
-  #handleDataChange = null;
   #destroyCallback = null;
-  #changeData = null;
-  #changeMode = null;
+  #onDataChange = null;
+  #onModeChange = null;
   #destinations = [];
   #offers = [];
   #formComponent = null;
@@ -14,9 +13,8 @@ export default class NewPointPresenter {
 
   constructor({ container, changeData, changeMode, destinations, offers }) {
     this.#container = container;
-    // console.log('Container:', this.#container);
-    this.#changeData = changeData;
-    this.#changeMode = changeMode;
+    this.#onDataChange = changeData;
+    this.#onModeChange = changeMode;
     this.#destinations = destinations.destinations;
     this.#offers = offers.offers;
   }
@@ -35,8 +33,7 @@ export default class NewPointPresenter {
       offers: this.#offers,
       isNewPoint: true,
       onFormSubmit: this.#handleFormSubmit,
-      onCloseClick: this.#handleCancelClick,
-      onDeleteClick: this.#handleDeleteClick,
+      onDeleteClick: this.#handleCancelClick,
     });
 
 
@@ -57,19 +54,16 @@ export default class NewPointPresenter {
     document.removeEventListener('keydown', this.#escKeyDownHandler);
 
     if (this.#destroyCallback) {
-      this.#destroyCallback(); // чтобы уведомить BoardPresenter, что форма закрыта
+      this.#destroyCallback();
     }
   }
 
   #handleFormSubmit = async (point) => {
     this.#formComponent.setSaving();
     try {
-      await this.#changeData(PointAction.ADD, UpdateType.MAJOR, point);
-      // УДАЛИ this.destroy();
-      // Родитель (BoardPresenter) должен сам убрать форму, т.к. произойдёт перерисовка
+      await this.#onDataChange(PointAction.ADD, UpdateType.MAJOR, point);
     } catch (error) {
-      // console.error('Ошибка добавления точки:', error);
-      this.#formComponent.setAborting(); // форма остаётся открытой, shake + кнопки активны
+      this.#formComponent.setAborting();
     }
   };
 
@@ -78,9 +72,6 @@ export default class NewPointPresenter {
     this.destroy();
   };
 
-  #handleDeleteClick = () => {
-    this.destroy();
-  };
 
   #escKeyDownHandler = (evt) => {
     if (evt.key === 'Escape') {

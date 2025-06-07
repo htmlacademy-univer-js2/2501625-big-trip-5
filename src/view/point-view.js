@@ -1,4 +1,3 @@
-// import AbstractView from '../framework/view/abstract-view.js';
 import AbstractStatefulView from '../framework/view/abstract-stateful-view.js';
 import dayjs from 'dayjs';
 import durationPlugin from 'dayjs/plugin/duration.js';
@@ -26,8 +25,7 @@ function createOfferList(selectedOfferIds) {
 function createPointTemplate(point, destinations) {
   const {basePrice, type, destination, isFavorite, dateFrom, dateTo, offers} = point;
 
-  const destination1 = destinations?.find((d) => d.id === destination.id) ?? null;
-  // const pointOffers = offers1?.find((o) => o.type === type)?.offers1 ?? [];
+  const currentDestination = destinations?.find((d) => d.id === destination.id) ?? null;
 
 
   const start = dayjs(dateFrom);
@@ -47,7 +45,7 @@ function createPointTemplate(point, destinations) {
         <div class="event__type">
           <img class="event__type-icon" width="42" height="42" src="img/icons/${type}.png" alt="Event type icon">
         </div>
-        <h3 class="event__title">${he.encode(type)} ${destination1 ? he.encode(destination1.name) : ''}</h3>
+        <h3 class="event__title">${he.encode(type)} ${currentDestination ? he.encode(currentDestination.name) : ''}</h3>
         <div class="event__schedule">
           <p class="event__time">
             <time class="event__start-time" datetime="${dateFrom}">${startTime}</time>
@@ -79,31 +77,26 @@ export default class PointView extends AbstractStatefulView {
   #point = null;
   #destinations = null;
   #offers = null;
-  _callback = {};
+  #callback = {};
 
   constructor({ point, destinations, offers, onEditClick, onFavoriteClick }) {
     super();
     this.#point = point;
     this.#destinations = destinations;
     this.#offers = offers;
-    this._callback.editClick = onEditClick;
-    this._callback.favoriteClick = onFavoriteClick;
+    this.#callback.editClick = onEditClick;
+    this.#callback.favoriteClick = onFavoriteClick;
+
+    this._restoreHandlers();
   }
 
   get template() {
     return createPointTemplate(this.#point, this.#destinations);
   }
 
-  setHandlers() {
-    this.element.querySelector('.event__rollup-btn')
-      .addEventListener('click', this.#editClickHandler);
-    this.element.querySelector('.event__favorite-btn')
-      .addEventListener('click', this.#favoriteClickHandler);
-  }
-
   #editClickHandler = (evt) => {
     evt.preventDefault();
-    this._callback.editClick?.();
+    this.#callback.editClick?.();
   };
 
   setAborting() {
@@ -118,9 +111,16 @@ export default class PointView extends AbstractStatefulView {
     this.shake(resetElementState);
   }
 
+  _restoreHandlers() {
+    this.element.querySelector('.event__rollup-btn')
+      .addEventListener('click', this.#editClickHandler);
+    this.element.querySelector('.event__favorite-btn')
+      .addEventListener('click', this.#favoriteClickHandler);
+  }
+
 
   #favoriteClickHandler = (evt) => {
     evt.preventDefault();
-    this._callback.favoriteClick?.();
+    this.#callback.favoriteClick?.();
   };
 }

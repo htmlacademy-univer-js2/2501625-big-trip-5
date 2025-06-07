@@ -7,17 +7,16 @@ export default class PointPresenter {
   #pointComponent = null;
   #pointListContainer = null;
   #editFormComponent = null;
-  // #boardContainer = null;
-  #changeData = null;
-  #changeMode = null;
+  #onDataChange = null;
+  #onModeChange = null;
   #mode = Mode.DEFAULT;
   #destinations = [];
   #offers = [];
 
   constructor({ pointListContainer, changeData, changeMode, destinations, offers }) {
     this.#pointListContainer = pointListContainer;
-    this.#changeData = changeData;
-    this.#changeMode = changeMode;
+    this.#onDataChange = changeData;
+    this.#onModeChange = changeMode;
     this.#destinations = destinations.destinations;
     this.#offers = offers.offers;
   }
@@ -25,7 +24,7 @@ export default class PointPresenter {
   init(point) {
     const destination = this.#destinations.find((dest) => dest.id === point.destination);
     const offerGroup = this.#offers.find((group) => group.type === point.type);
-    const availableOffers = offerGroup ? offerGroup.offers : [];
+    const availableOffers = offerGroup?.offers || [];
 
     const mappedOffers = availableOffers.map((offer) => ({
       ...offer,
@@ -47,7 +46,7 @@ export default class PointPresenter {
       point: pointWithFullData,
       destinations: this.#destinations,
       offers: this.#offers,
-      onEditClick: this.#handleEditClick,
+      onEditClick: this.#onEditClick,
       onFavoriteClick: this.#handleFavoriteClick,
     });
 
@@ -57,21 +56,19 @@ export default class PointPresenter {
       offers: this.#offers,
       onFormSubmit: this.#handleFormSubmit,
       onDeleteClick: this.#handleDeleteClick,
+      onCloseClick: this.#onCloseClick
     });
 
-    this.#editFormComponent.setCloseClickHandler(this.#handleCloseClick);
-
+    this.#editFormComponent.setCloseClickHandler(this.#onCloseClick);
     this.#editFormComponent._restoreHandlers();
 
     if (!prevPointComponent || !prevEditFormComponent) {
       render(this.#pointComponent, this.#pointListContainer);
-      this.#pointComponent.setHandlers();
       return;
     }
 
     if (this.#mode === Mode.DEFAULT) {
       replace(this.#pointComponent, prevPointComponent);
-      this.#pointComponent.setHandlers();
     }
 
     if (this.#mode === Mode.EDITING) {
@@ -82,9 +79,8 @@ export default class PointPresenter {
     remove(prevEditFormComponent);
   }
 
-
   setOnModeChange(callback) {
-    this.#changeMode = callback;
+    this.#onModeChange = callback;
   }
 
   destroy() {
@@ -93,22 +89,21 @@ export default class PointPresenter {
   }
 
   resetView() {
-    // console.log(this.#mode !== Mode.DEFAULT, this.#mode);
     if (this.#mode === Mode.EDITING) {
       this.#editFormComponent.reset(this.#point);
-      this.#replaceEditFormToPoint();
+      this.#hideEditForm();
     }
   }
 
-  #replacePointToEditForm() {
-    // console.log('start');
+
+  #showEditForm() {
     replace(this.#editFormComponent, this.#pointComponent);
     document.addEventListener('keydown', this.#onEscKeyDown);
-    this.#changeMode();
+    this.#onModeChange();
     this.#mode = Mode.EDITING;
   }
 
-  #replaceEditFormToPoint() {
+  #hideEditForm() {
     replace(this.#pointComponent, this.#editFormComponent);
     document.removeEventListener('keydown', this.#onEscKeyDown);
     this.#mode = Mode.DEFAULT;
@@ -125,12 +120,8 @@ export default class PointPresenter {
     const updatedPoint = { ...this.#point, isFavorite: !this.#point.isFavorite };
 
     try {
-      await this.#changeData(PointAction.UPDATE, UpdateType.PATCH, updatedPoint);
-      // Если нужно, можно обновить локальный state здесь,
-      // но обычно это делает модель, а в презентере просто ререндер по данным
-    } catch (error) {
-      // console.error('Ошибка при обновлении избранного:', error);
-      // Можно вызвать метод для показа shake-анимации, например:
+      await this.#onDataChange(PointAction.UPDATE, UpdateType.PATCH, updatedPoint);
+    } catch {
       if (this.#editFormComponent) {
         this.#editFormComponent.setAborting();
       } else if (this.#pointComponent) {
@@ -139,13 +130,12 @@ export default class PointPresenter {
     }
   };
 
-
-  #handleEditClick = () => {
-    this.#replacePointToEditForm();
-    this.#changeMode(this);
+  #onEditClick = () => {
+    this.#showEditForm();
+    this.#onModeChange(this);
   };
 
-  #handleCloseClick = () => {
+  #onCloseClick = () => {
     this.resetView();
   };
 
@@ -153,35 +143,20 @@ export default class PointPresenter {
     this.#editFormComponent.setSaving();
 
     try {
-      await this.#changeData(
-        PointAction.UPDATE,
-        UpdateType.MINOR,
-        updatedPoint
-      );
-
-      this.#replaceEditFormToPoint();
-    } catch (err) {
+      await this.#onDataChange(PointAction.UPDATE, UpdateType.MINOR, updatedPoint);
+      this.#hideEditForm();
+    } catch {
       this.#editFormComponent.setAborting();
     }
   };
 
-
   #handleDeleteClick = async () => {
-    this.#editFormComponent.setDeleting(); // Блокируем интерфейс, меняем кнопку на "Deleting..."
+    this.#editFormComponent.setDeleting();
 
     try {
-      await this.#changeData(
-        PointAction.DELETE,
-        UpdateType.MINOR,
-        this.#point,
-      );
-
-      // После успешного удаления, можно закрыть форму/удалить компонент
-      // Вариант:
-      // this.destroy(); // если ты хочешь полностью убрать компонент
-    } catch (err) {
-      this.#editFormComponent.setAborting(); // Shake + разблокировка интерфейса при ошибке
+      await this.#onDataChange(PointAction.DELETE, UpdateType.MINOR, this.#point);
+    } catch {
+      this.#editFormComponent.setAborting();
     }
   };
-
 }

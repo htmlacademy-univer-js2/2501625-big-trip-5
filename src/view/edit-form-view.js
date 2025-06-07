@@ -53,7 +53,6 @@ const renderDestinationContainer = (destination) => {
   const hasDescription = destination.description?.trim();
   const hasPictures = Array.isArray(destination.pictures) && destination.pictures.length > 0;
 
-  // Если нет ни описания, ни фото — ничего не рендерим
   if (!hasDescription && !hasPictures) {
     return '';
   }
@@ -120,7 +119,7 @@ const renderResetButtonTemplate = (isNewPoint, isDisabled, isDeleting) =>
       <span class="visually-hidden">Open event</span>
     </button>`;
 
-const createEditRoutePointTemplate = (point, destinations, offersByType, isNewPoint, offers1) => {
+const createEditRoutePointTemplate = (point, destinations, offersByType, isNewPoint, offers) => {
   const {
     type,
     destination,
@@ -133,7 +132,7 @@ const createEditRoutePointTemplate = (point, destinations, offersByType, isNewPo
   } = point;
   const destinationData = destinations.find((dest) => dest.id === destination.id);
 
-  const currentOffers = offers1.find((offer) => offer.type === type);
+  const currentOffers = offers.find((offer) => offer.type === type);
   const selectedOffers = point.offers
     .filter((offer) => offer.isSelected)
     .map((offer) => offer.id);
@@ -231,10 +230,7 @@ export default class EditRoutePointView extends AbstractStatefulView {
     this.#handleFormSubmit = onFormSubmit;
     this.#handleCloseClick = onCloseClick;
     this.#handleDeleteClick = onDeleteClick;
-    // console.log('destinations', destinations);
 
-    // Преобразуем "сырой" point в state
-    // const preparedPoint = EditRoutePointView.#preparePoint(point, offers);
     this._state = EditRoutePointView.parsePointToState(
       EditRoutePointView.#preparePoint(point, offers)
     );
@@ -301,14 +297,14 @@ export default class EditRoutePointView extends AbstractStatefulView {
 
     if (!this.#isNewPoint) {
       this.element.querySelector('.event__rollup-btn')
-        .addEventListener('click', this.#closeClickHandler);
+        .addEventListener('click', this.#onCloseClick);
     }
 
     this.element.querySelector('form')
-      .addEventListener('submit', this.#formSubmitHandler);
+      .addEventListener('submit', this.#onFormSubmit);
 
     this.element.querySelector('.event__reset-btn')
-      .addEventListener('click', this.#deleteClickHandler);
+      .addEventListener('click', this.#onDeleteClick);
   }
 
   #setDatepickers() {
@@ -346,7 +342,6 @@ export default class EditRoutePointView extends AbstractStatefulView {
       .addEventListener('change', this.#priceChangeHandler);
 
     const offersContainer = this.element.querySelector('.event__available-offers');
-    // console.log('offersContainer', offersContainer);
     if (offersContainer) {
       offersContainer.addEventListener('change', this.#offersChangeHandler);
     }
@@ -425,17 +420,17 @@ export default class EditRoutePointView extends AbstractStatefulView {
     this._restoreHandlers();
   };
 
-  #formSubmitHandler = (evt) => {
+  #onFormSubmit = (evt) => {
     evt.preventDefault();
     this.#handleFormSubmit(EditRoutePointView.parseStateToPoint(this._state));
   };
 
-  #closeClickHandler = (evt) => {
+  #onCloseClick = (evt) => {
     evt.preventDefault();
     this.#handleCloseClick();
   };
 
-  #deleteClickHandler = (evt) => {
+  #onDeleteClick = (evt) => {
     evt.preventDefault();
     this.#handleDeleteClick(EditRoutePointView.parseStateToPoint(this._state));
   };
@@ -443,7 +438,7 @@ export default class EditRoutePointView extends AbstractStatefulView {
   setCloseClickHandler(callback) {
     this.#handleCloseClick = callback;
     this.element.querySelector('.event__rollup-btn')
-      .addEventListener('click', this.#closeClickHandler);
+      .addEventListener('click', this.#onCloseClick);
   }
 
 
@@ -471,7 +466,6 @@ export default class EditRoutePointView extends AbstractStatefulView {
   }
 
   static #preparePoint(point, allOffers = []) {
-    // console.log('Point offers (raw):', point.offers);
 
     let selectedOfferIds = [];
 
@@ -489,14 +483,12 @@ export default class EditRoutePointView extends AbstractStatefulView {
       selectedOfferIds = [];
     }
 
-    // console.log('Selected offer IDs:', selectedOfferIds);
 
-    const offerGroup = allOffers.find((group) => group.type === point.type);
-    const availableOffers = offerGroup ? offerGroup.offers : [];
+    const availableOffers = allOffers.find((group) => group.type === point.type)?.offers ?? [];
+
 
     const mappedOffers = availableOffers.map((offer) => {
       const isSelected = selectedOfferIds.includes(offer.id);
-      // console.log(`Offer id ${offer.id} selected:`, isSelected);
       return {
         ...offer,
         isSelected,

@@ -9,15 +9,15 @@ function createFilterTemplate(filters, currentFilterType) {
           ${filters.map(({ type, disabled }) => `
             <div class="trip-filters__filter">
               <input
-                id="filter-${type.toLowerCase()}"
+                id="filter-${type}"
                 class="trip-filters__filter-input visually-hidden"
                 type="radio"
                 name="trip-filter"
-                value="${type.toLowerCase()}"
-                ${type.toLowerCase() === currentFilterType ? 'checked' : ''}
+                value="${type}"
+                ${type === currentFilterType ? 'checked' : ''}
                 ${disabled ? 'disabled' : ''}
               >
-              <label class="trip-filters__filter-label" for="filter-${type.toLowerCase()}">
+              <label class="trip-filters__filter-label" for="filter-${type}">
                 ${type.charAt(0).toUpperCase() + type.slice(1)}
               </label>
             </div>

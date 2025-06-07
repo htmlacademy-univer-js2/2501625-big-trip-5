@@ -1,9 +1,4 @@
-import ApiService from './framework/api-service.js';
-
-// const Method = {
-//   GET: 'GET',
-//   PUT: 'PUT',
-// };
+import ApiService from '../framework/api-service.js';
 
 export default class DestinationsApiService extends ApiService {
   get destinations() {
