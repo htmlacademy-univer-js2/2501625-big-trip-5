@@ -1,31 +1,51 @@
-import BoardPresenter from './presenter/1.js';
-import PointsModel from './model/model.js';
-// import OffersModel from './model/offers-model.js';
-// import DestinationsModel from './model/destinations-model.js';
+import PointsModel from './model/point-model.js';
 import FilterModel from './model/filter-model.js';
+import OffersModel from './model/offer-model.js';
+import DestinationsModel from './model/destination-model.js';
+
+import BoardPresenter from './presenter/main-presenter.js';
 import FilterPresenter from './presenter/filter-presenter.js';
 
-// Создаём модели
-const pointsModel = new PointsModel();
-// const offersModel = new OffersModel(); // ✅
-// const destinationsModel = new DestinationsModel(); // ✅
+import PointsApiService from './api/points-api-service.js';
+import OffersApiService from './api/offers-api-service.js';
+import DestinationsApiService from './api/destinations-api-service.js';
+
+const AUTHORIZATION = 'Basic hS2sfS44wcl1sa2jre3';
+const END_POINT = 'https://24.objects.htmlacademy.pro/big-trip';
+
+const boardContainerElement = document.querySelector('.trip-events');
+const filterContainerElement = document.querySelector('.trip-controls__filters');
+
+const pointsModel = new PointsModel(new PointsApiService(END_POINT, AUTHORIZATION));
+const destinationsModel = new DestinationsModel(new DestinationsApiService(END_POINT, AUTHORIZATION));
+const offersModel = new OffersModel(new OffersApiService(END_POINT, AUTHORIZATION));
 const filterModel = new FilterModel();
 
-// Презентер доски
-const boardPresenter = new BoardPresenter({
-  pointsModel,
-  // offersModel, // ✅ передано
-  // destinationsModel, // ✅ передано
-  filterModel
-});
-
-// Презентер фильтра
 const filterPresenter = new FilterPresenter({
-  filterContainer: document.querySelector('.trip-controls__filters'),
+  filterContainer: filterContainerElement,
   filterModel,
-  pointsModel
+  pointsModel,
 });
 
-// Инициализация
-filterPresenter.init();
+const boardPresenter = new BoardPresenter({
+  boardContainer: boardContainerElement ,
+  filterContainer: filterContainerElement,
+  pointsModel,
+  filterModel,
+  destinationsModel,
+  offersModel,
+});
+
 boardPresenter.init();
+
+(async () => {
+  filterPresenter.init();
+
+  await Promise.all([
+    offersModel.init(),
+    destinationsModel.init(),
+  ]);
+
+  await pointsModel.init();
+
+})();

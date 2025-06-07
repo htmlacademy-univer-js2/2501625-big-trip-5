@@ -14,7 +14,7 @@ module.exports = {
     static: {
       directory: path.resolve(__dirname, 'build'),
     },
-    port: 8081,
+    port: 8080,
     open: true,
     hot: true,
   },
